@@ -8,16 +8,17 @@ const PORT: u16 = 7878;
 fn main() {
     let address = format!("{}:{}", IP, PORT);
     match TcpStream::connect(address) {
-        Ok(mut stream) => {
-            if let Ok(message) = serde_json::to_string(&Message::Subscribe { name: "Swann".to_string() }) {
-                let result = stream.write(message.as_bytes()).unwrap();
-                println!("result : {}, message: {}", result, message);
-                // match result {
-                //     Ok(_) => println!("Successfully wrote to stream"),
-                //     Err(e) => println!("Error: {}", e),
-                // }
-            }
+        Ok(stream) => {
+            let message = Message::Subscribe { name: "test".to_string() };
+            send_message(stream, message);
         },
         Err(_) => panic!("Could not connect to server {} on port {}", IP, PORT),
     }
+}
+
+fn send_message(mut stream: TcpStream, message: Message) {
+    if let Ok(message) = serde_json::to_string(&message) {
+        let result = stream.write(message.as_bytes()).unwrap();
+        println!("result : {}, message: {}", result, message);
+    } 
 }

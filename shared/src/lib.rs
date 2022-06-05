@@ -6,10 +6,10 @@ pub enum SubscribeError {
     InvalidName,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ChallengeOutput;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PublicPlayer {
     pub name: String,
     pub stream_id: String,
@@ -19,7 +19,7 @@ pub struct PublicPlayer {
     pub total_used_time: f64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeAnswer {
     ChallengeName(ChallengeOutput),
 }
@@ -29,7 +29,7 @@ pub struct ChallengeResult {
     pub next_target: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeValue {
     Unreachable,
     Timeout,
@@ -37,13 +37,13 @@ pub enum ChallengeValue {
     Ok { used_time: f64, next_target: String },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ReportedChallengeResult {
     pub name: String,
     pub value: ChallengeValue,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MD5HashCash {
   complexity: u8,
   message: String,
@@ -53,7 +53,7 @@ pub type PublicLeaderBoard = Vec<PublicPlayer>;
 pub type SubscribeResultSuccess = ();
 pub type SubscribeResultFailure = SubscribeError;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
   Hello,
   Welcome { version: u8 },
