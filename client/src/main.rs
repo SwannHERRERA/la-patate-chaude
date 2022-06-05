@@ -1,7 +1,5 @@
-mod message;
-
 use std::{net::TcpStream, io::Write};
-use message::Message;
+use shared::Message;
 
 
 const IP: &'static str = "127.0.0.1";
@@ -19,9 +17,6 @@ fn main() {
                 //     Err(e) => println!("Error: {}", e),
                 // }
             }
-
-            
-
         },
         Err(_) => panic!("Could not connect to server {} on port {}", IP, PORT),
     }
