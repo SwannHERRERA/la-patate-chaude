@@ -1,6 +1,9 @@
-use std::{net::TcpStream, io::{Write, Read}};
-use shared::Message;
+use std::{io::{Read, Write}, net::TcpStream};
+use std::borrow::Cow;
+use rand;
+use rand::Rng;
 
+use shared::Message;
 
 const IP: &'static str = "127.0.0.1";
 const PORT: u16 = 7878;
@@ -11,8 +14,6 @@ fn main() {
         Ok(stream) => {
             stream.set_nonblocking(true);
             let message = Message::Hello;
-            send_message(&stream, message);
-            let message = Message::Subscribe { name: "test".to_string() };
             send_message(&stream, message);
             receive_messages(&stream);
         },
@@ -37,6 +38,22 @@ fn receive_messages(mut stream: &TcpStream){
         let str = String::from_utf8_lossy(&v);
         if str != "" {
             println!("{str:?}");
+            match serde_json::from_str(&str) {
+                Ok(message) => dispatch_messages(stream, message),
+                Err(_) => println!("weird response"),
+            }
         }
+    }
+}
+
+fn dispatch_messages(mut stream: &TcpStream, message: Message) {
+    match message {
+        Message::Welcome { version } => {
+            let mut rng = rand::thread_rng();
+            let n1: u8 = rng.gen();
+            let answer = Message::Subscribe { name: "test".to_string()+ &*n1.to_string() };
+            send_message(&stream, answer);
+        }
+        _ => {}
     }
 }
