@@ -21,12 +21,16 @@ fn main() {
 }
 
 fn parse_message_from_tcp_stream(mut message: TcpStream) -> Message {
-    let mut v = Vec::<u8>::new();
-    let _size_read = message.read_to_end(&mut v);
-    let message = String::from_utf8_lossy(&v);
-    let message = serde_json::from_str(&message);
-    match message {
-      Ok(m) => m,
-      Err(err) => panic!("Cannot parse message : {err:?}")
-    }
+  let mut message_size = [0; 4];
+  let _size_error = message.read(&mut message_size);
+  let decimal_size = u32::from_be_bytes(message_size);
+
+  let mut bytes_of_message = vec![0; decimal_size as usize];
+  let _size_read = message.read_exact(&mut bytes_of_message);
+  let message = String::from_utf8_lossy(&bytes_of_message);
+  let message = serde_json::from_str(&message);
+  match message {
+    Ok(m) => m,
+    Err(err) => panic!("Cannot parse message : {err:?}")
+  }
 }
