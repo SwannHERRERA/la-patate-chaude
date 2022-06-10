@@ -42,10 +42,10 @@ fn receive_messages(mut stream: &TcpStream){
 
         let mut buf = vec![0; res_size as usize];
         stream.read(&mut buf);
-        let str = String::from_utf8_lossy(&buf);
-        println!(": {:?}", str);
+        let string_receive = String::from_utf8_lossy(&buf);
+        println!(": {:?}", string_receive);
 
-        match serde_json::from_str(&str) {
+        match serde_json::from_str(&string_receive) {
             Ok(message) => dispatch_messages(stream, message),
             Err(_) => println!("Error while parsing message"),
         }
