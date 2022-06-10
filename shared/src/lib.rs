@@ -13,6 +13,12 @@ pub struct MD5HashCashOutput {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct MD5HashCashInput {
+    complexity: u32,
+    message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PublicPlayer {
     pub name: String,
     pub stream_id: String,
@@ -50,11 +56,11 @@ pub enum SubscribeResult {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Challenge {
-    MD5HashCash {
-        complexity: u8,
-        message: String,
-    }
+pub struct MD5HashCash(MD5HashCashInput);
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ChallengeType {
+    MD5HashCash(MD5HashCash)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -64,7 +70,7 @@ pub enum Message {
     Subscribe { name: String },
     SubscribeResult(SubscribeResult),
     PublicLeaderBoard(PublicLeaderBoard),
-    Challenge(Challenge),
+    Challenge(ChallengeType),
     ChallengeResult {
         answer: ChallengeAnswer,
         next_target: String,
@@ -78,17 +84,52 @@ pub enum Message {
     },
 }
 
+pub trait Challenge {
+    /// Données en entrée du challenge
+    type Input;
+    /// Données en sortie du challenge
+    type Output;
+    /// Nom du challenge
+    fn name() -> String;
+    /// Create a challenge from the specific input
+    fn new(input: Self::Input) -> Self;
+    /// Résout le challenge
+    fn solve(&self) -> Self::Output;
+    /// Vérifie qu'une sortie est valide pour le challenge
+    fn verify(&self, answer: Self::Output) -> bool;
+}
+
+impl Challenge for MD5HashCash {
+    type Input = MD5HashCashInput;
+    type Output = MD5HashCashOutput;
+
+    fn name() -> String {
+        "MD5HashCash".to_string()
+    }
+
+    fn new(input: Self::Input) -> Self {
+        MD5HashCash(input)
+    }
+
+    fn solve(&self) -> Self::Output {
+        MD5HashCashOutput { seed: 0, hashcode: "".to_string() }
+    }
+
+    fn verify(&self, answer: Self::Output) -> bool {
+        todo!()
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-  fn test_message_hello_serialization() {
-    let message = Message::Hello;
-    let serialized = serde_json::to_string(&message).unwrap();
-    assert_eq!(serialized, "\"Hello\"");
-  }
+    fn test_message_hello_serialization() {
+        let message = Message::Hello;
+        let serialized = serde_json::to_string(&message).unwrap();
+        assert_eq!(serialized, "\"Hello\"");
+    }
 
   #[test]
   fn test_welcome_serialization() {

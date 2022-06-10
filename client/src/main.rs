@@ -4,7 +4,7 @@ use std::borrow::Cow;
 use rand;
 use rand::Rng;
 
-use shared::{Challenge, ChallengeAnswer, MD5HashCashOutput, Message};
+use shared::{Challenge, ChallengeAnswer, ChallengeType, MD5HashCash, MD5HashCashInput, MD5HashCashOutput, Message};
 
 const IP: &'static str = "127.0.0.1";
 const PORT: u16 = 7878;
@@ -55,7 +55,7 @@ fn receive_messages(mut stream: &TcpStream){
 fn dispatch_messages(mut stream: &TcpStream, message: Message) {
     println!("Dispatching: {:?}", message);
     match message {
-        Message::Welcome { version } => {
+        Message::Welcome { .. } => {
             let mut rng = rand::thread_rng();
             let n1: u8 = rng.gen();
             let answer = Message::Subscribe { name: "test".to_string() + &*n1.to_string() };
@@ -63,16 +63,17 @@ fn dispatch_messages(mut stream: &TcpStream, message: Message) {
         }
         Message::Challenge(challenge) => {
             let answer = solve_challenge(challenge);
-            send_message(&stream, answer);
+            let message = Message::ChallengeResult { answer, next_target: "".to_string() };
+            send_message(&stream, message);
         }
         _ => {}
     }
 }
 
-fn solve_challenge(challenge: Challenge) -> Message {
+fn solve_challenge(challenge: ChallengeType) -> ChallengeAnswer {
     match challenge {
-        Challenge::MD5HashCash { complexity, message } => {
-            Message::ChallengeResult { answer: ChallengeAnswer::MD5HashCash(MD5HashCashOutput { seed: 0, hashcode: "".to_string() }), next_target: "".to_string() }
+        ChallengeType::MD5HashCash(challenge) => {
+            ChallengeAnswer::MD5HashCash(challenge.solve())
         }
     }
 }
