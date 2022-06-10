@@ -4,7 +4,7 @@ use std::borrow::Cow;
 use rand;
 use rand::Rng;
 
-use shared::Message;
+use shared::{Challenge, ChallengeAnswer, MD5HashCashOutput, Message};
 
 const IP: &'static str = "127.0.0.1";
 const PORT: u16 = 7878;
@@ -58,9 +58,21 @@ fn dispatch_messages(mut stream: &TcpStream, message: Message) {
         Message::Welcome { version } => {
             let mut rng = rand::thread_rng();
             let n1: u8 = rng.gen();
-            let answer = Message::Subscribe { name: "test".to_string()+ &*n1.to_string() };
+            let answer = Message::Subscribe { name: "test".to_string() + &*n1.to_string() };
+            send_message(&stream, answer);
+        }
+        Message::Challenge(challenge) => {
+            let answer = solve_challenge(challenge);
             send_message(&stream, answer);
         }
         _ => {}
+    }
+}
+
+fn solve_challenge(challenge: Challenge) -> Message {
+    match challenge {
+        Challenge::MD5HashCash { complexity, message } => {
+            Message::ChallengeResult { answer: ChallengeAnswer::MD5HashCash(MD5HashCashOutput { seed: 0, hashcode: "".to_string() }), next_target: "".to_string() }
+        }
     }
 }

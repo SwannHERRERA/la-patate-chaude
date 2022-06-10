@@ -7,7 +7,10 @@ pub enum SubscribeError {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ChallengeOutput;
+pub struct MD5HashCashOutput {
+    pub seed: u64,
+    pub hashcode: String,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PublicPlayer {
@@ -21,12 +24,7 @@ pub struct PublicPlayer {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeAnswer {
-    ChallengeName(ChallengeOutput),
-}
-
-pub struct ChallengeResult {
-    pub name: ChallengeAnswer,
-    pub next_target: String,
+    MD5HashCash(MD5HashCashOutput)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -43,18 +41,20 @@ pub struct ReportedChallengeResult {
     pub value: ChallengeValue,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct MD5HashCash {
-    complexity: u8,
-    message: String,
-}
-
 pub type PublicLeaderBoard = Vec<PublicPlayer>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SubscribeResult {
     Ok,
-    Err (SubscribeError),
+    Err(SubscribeError),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Challenge {
+    MD5HashCash {
+        complexity: u8,
+        message: String,
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -64,21 +64,18 @@ pub enum Message {
     Subscribe { name: String },
     SubscribeResult(SubscribeResult),
     PublicLeaderBoard(PublicLeaderBoard),
-    Challenge {
-        #[serde(rename = "MD5HashCash")]
-        md5_hash_cash: MD5HashCash,
-    },
+    Challenge(Challenge),
     ChallengeResult {
         answer: ChallengeAnswer,
         next_target: String,
     },
     RoundSummary {
-    challenge: String,
-    chain: Vec<ReportedChallengeResult>,
-  },
-  EndOfGame {
-    leader_board: Vec<PublicPlayer>,
-  },
+        challenge: String,
+        chain: Vec<ReportedChallengeResult>,
+    },
+    EndOfGame {
+        leader_board: Vec<PublicPlayer>,
+    },
 }
 
 
