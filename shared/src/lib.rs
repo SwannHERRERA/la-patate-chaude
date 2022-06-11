@@ -1,3 +1,7 @@
+use std::io::Write;
+use std::process::{Command, Stdio};
+
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -112,13 +116,41 @@ impl Challenge for MD5HashCash {
     }
 
     fn solve(&self) -> Self::Output {
-        MD5HashCashOutput { seed: 0, hashcode: "".to_string() }
+        let seed = generate_seed(self.0.complexity);
+        let sum = hash_md5(format!("{:016X}", seed) + &self.0.message.to_string());
+        MD5HashCashOutput { seed, hashcode: sum.to_string() }
     }
 
     fn verify(&self, answer: Self::Output) -> bool {
         todo!()
     }
 }
+
+fn generate_seed(complexity: u32) -> u64 {
+    let mut rng = rand::thread_rng();
+    let mut seed: u64 = rng.gen::<u64>();
+    seed = seed << 32 - complexity;
+    seed = seed >> 32 - complexity;
+    seed
+}
+
+fn hash_md5(data: String) -> String {
+    println!("{:?}", data);
+    let mut md5_cmd = Command::new("md5sum")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+    {
+        let child_stdin = md5_cmd.stdin.as_mut().unwrap();
+        child_stdin.write_all(data.as_bytes()).expect("Error while writing to md5 stdin");
+    }
+
+    let output = md5_cmd.wait_with_output().unwrap();
+    let md5 = String::from_utf8_lossy(&output.stdout);
+    md5.split(" ").next().unwrap().to_ascii_uppercase()
+}
+
 
 #[cfg(test)]
 mod tests {
