@@ -32,14 +32,14 @@ fn send_message(mut stream: &TcpStream, message: Message) {
 fn receive_messages(mut stream: &TcpStream){
     loop {
         let mut buf_size = [0; 4];
-        stream.read(&mut buf_size);
+        let _read_result = stream.read(&mut buf_size);
         let res_size = u32::from_be_bytes(buf_size);
         if res_size == 0 {
             continue
         }
 
         let mut buf = vec![0; res_size as usize];
-        stream.read(&mut buf);
+        let _read_result = stream.read(&mut buf);
         let string_receive = String::from_utf8_lossy(&buf);
         println!(": {:?}", string_receive);
 
@@ -50,9 +50,10 @@ fn receive_messages(mut stream: &TcpStream){
     }
 }
 
-fn dispatch_messages(mut stream: &TcpStream, message: Message) {
+fn dispatch_messages(stream: &TcpStream, message: Message) {
     println!("Dispatching: {:?}", message);
     match message {
+        #[allow(unused_variables)]
         Message::Welcome { version } => {
             let mut rng = rand::thread_rng();
             let n1: u8 = rng.gen();
