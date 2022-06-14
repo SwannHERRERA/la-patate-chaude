@@ -1,9 +1,10 @@
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::io::Read;
-use shared::Message;
+use shared::config::{PORT, IP};
+use shared::message::Message;
 
 fn main() {
-  let addr = SocketAddr::from(([127, 0, 0, 1], 7878));
+  let addr = SocketAddr::from((IP, PORT));
   let listener = TcpListener::bind(addr);
 
   let listener = match listener {
