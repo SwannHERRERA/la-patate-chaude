@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::process::{Command, Stdio};
+use std::u64;
 
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -64,7 +65,7 @@ pub struct MD5HashCash(MD5HashCashInput);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeType {
-    MD5HashCash(MD5HashCash)
+    MD5HashCash(MD5HashCash),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -116,9 +117,18 @@ impl Challenge for MD5HashCash {
     }
 
     fn solve(&self) -> Self::Output {
-        let seed = generate_seed(self.0.complexity);
-        let sum = hash_md5(format!("{:016X}", seed) + &self.0.message.to_string());
-        MD5HashCashOutput { seed, hashcode: sum.to_string() }
+        let mut md5;
+        let mut seed: u64 = 0;
+        loop {
+            md5 = hash_md5(format!("{:016X}", seed) + &self.0.message.to_string());
+            let (a, _) = md5.split_at(16);
+            if check_hash(self.0.complexity, a) {
+                break;
+            }
+            seed += 1;
+        }
+
+        MD5HashCashOutput { seed, hashcode: md5.to_string() }
     }
 
     fn verify(&self, answer: Self::Output) -> bool {
@@ -126,16 +136,22 @@ impl Challenge for MD5HashCash {
     }
 }
 
-fn generate_seed(complexity: u32) -> u64 {
-    let mut rng = rand::thread_rng();
-    let mut seed: u64 = rng.gen::<u64>();
-    seed = seed << 32 - complexity;
-    seed = seed >> 32 - complexity;
-    seed
+const NTHREADS: u32 = 10;
+
+fn check_hash(mut complexity: u32, hash: &str) -> bool {
+    let bit_compare = (1 << 63);
+    let mut sum = u64::from_str_radix(hash, 16).unwrap();
+    while complexity > 0 {
+        if (sum & bit_compare) > 0 {
+            break;
+        }
+        sum = sum << 1;
+        complexity -= 1;
+    }
+    complexity == 0
 }
 
 fn hash_md5(data: String) -> String {
-    println!("{:?}", data);
     let mut md5_cmd = Command::new("md5sum")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
