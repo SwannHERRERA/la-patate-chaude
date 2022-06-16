@@ -21,7 +21,8 @@ impl Server {
     for message in self.listener.incoming() {
       debug!("message={message:?}");
       let message = self.parse_message_from_tcp_stream(message.unwrap());
-      handle_message(message);
+      let _response = handle_message(message);
+      // TODO response
     }
   }
 
@@ -53,7 +54,7 @@ fn create_listener() -> TcpListener {
 }
 
 fn main() {
-  std::env::set_var("RUST_LOG", "trace");
+  std::env::set_var("RUST_LOG", "debug");
   pretty_env_logger::init();
   let listener = create_listener();
   let server = Server::new(listener);
