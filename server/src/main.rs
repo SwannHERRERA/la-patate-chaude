@@ -3,6 +3,9 @@ use std::io::Read;
 use log::{info, debug};
 use shared::config::{PORT, IP};
 use shared::message::Message;
+use crate::message_handler::handle_message;
+
+mod message_handler;
 
 
 struct Server {
@@ -18,8 +21,7 @@ impl Server {
     for message in self.listener.incoming() {
       debug!("message={message:?}");
       let message = self.parse_message_from_tcp_stream(message.unwrap());
-
-      debug!("{message:?}");
+      handle_message(message);
     }
   }
 
@@ -39,6 +41,7 @@ impl Server {
   }
 }
 
+
 fn create_listener() -> TcpListener {
   let addr = SocketAddr::from((IP, PORT));
   let listener = TcpListener::bind(addr);
@@ -50,7 +53,7 @@ fn create_listener() -> TcpListener {
 }
 
 fn main() {
-  println!("Hello, world!");
+  std::env::set_var("RUST_LOG", "trace");
   pretty_env_logger::init();
   let listener = create_listener();
   let server = Server::new(listener);
