@@ -58,7 +58,7 @@ fn main() {
   std::env::set_var("RUST_LOG", "debug");
   pretty_env_logger::init();
   let listener = create_listener();
-  let message_handler = MessageHandler::new();
+  let message_handler = MessageHandler::new(vec![]);
   let mut server = Server::new(listener, message_handler);
   server.listen();
 }

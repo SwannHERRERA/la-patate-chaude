@@ -1,16 +1,14 @@
-use log::{info, debug};
-use shared::message::{Message, SubscribeResult};
+use log::{info, debug, trace};
+use shared::message::{Message, SubscribeResult, SubscribeError};
 
 #[derive(Debug)]
 pub struct MessageHandler {
-  player: Vec<String>,
+  players: Vec<String>,
 }
 
 impl MessageHandler {
-  pub fn new() -> MessageHandler {
-    MessageHandler {
-      player: Vec::new(),
-    }
+  pub fn new(players: Vec<String>) -> MessageHandler {
+    MessageHandler { players }
   }
 
   pub fn handle_message(&mut self, message: Message) -> Message {
@@ -23,9 +21,14 @@ impl MessageHandler {
   }
 
   fn handle_subscribtion(&mut self, name: String) -> Message {
-    let answer = Message::SubscribeResult(SubscribeResult::Ok);
-    self.player.push(name);
+    let answer = if self.players.contains(&name) {
+       Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))
+    } else {
+      Message::SubscribeResult(SubscribeResult::Ok)
+    };
+    self.players.push(name);
     debug!("Answer: {:?}", answer);
+    trace!("Players: {:?}", self.players);
     answer
   }
 
@@ -56,7 +59,7 @@ mod tests {
     #[test]
   fn test_handle_hello() {
     setup();
-    let mut handler = MessageHandler::new();
+    let mut handler = MessageHandler::new(vec![]);
     println!("{:?}", handler);
     let message = Message::Hello;
     let answer: Message  = handler.handle_message(message);
@@ -67,10 +70,18 @@ mod tests {
   #[test]
   fn test_handle_subscribe() {
     setup();
-    let mut handler = MessageHandler::new();
+    let mut handler = MessageHandler::new(vec![]);
     let message = Message::Subscribe { name: "John".to_owned() };
     let answer: Message  = handler.handle_message(message);
     println!("Answer: {:?}", answer);
     assert!(matches!(answer, Message::SubscribeResult(SubscribeResult::Ok)));
+  }
+
+  #[test]
+  fn test_handle_subscribe_already_registered() {
+    setup();
+    let mut handler = MessageHandler::new(vec!["John".to_owned()]);
+    let answer = handler.handle_subscribtion("John".to_owned());
+    assert!(matches!(answer, Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))));
   }
 }
