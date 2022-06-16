@@ -1,27 +1,28 @@
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::io::Read;
 use log::{info, debug};
+use message_handler::MessageHandler;
 use shared::config::{PORT, IP};
 use shared::message::Message;
-use crate::message_handler::handle_message;
 
 mod message_handler;
 
 
 struct Server {
     listener: TcpListener,
+    message_handler: MessageHandler,
 }
 
 impl Server {
-  fn new(listener: TcpListener) -> Server {
-    Server { listener }
+  fn new(listener: TcpListener, message_handler: MessageHandler) -> Server {
+    Server { listener, message_handler }
   }
 
-  fn listen(&self) {
+  fn listen(&mut self) {
     for message in self.listener.incoming() {
       debug!("message={message:?}");
       let message = self.parse_message_from_tcp_stream(message.unwrap());
-      let _response = handle_message(message);
+      let _response = self.message_handler.handle_message(message);
       // TODO response
     }
   }
@@ -57,7 +58,8 @@ fn main() {
   std::env::set_var("RUST_LOG", "debug");
   pretty_env_logger::init();
   let listener = create_listener();
-  let server = Server::new(listener);
+  let message_handler = MessageHandler::new();
+  let mut server = Server::new(listener, message_handler);
   server.listen();
 }
 
