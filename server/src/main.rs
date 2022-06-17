@@ -3,6 +3,7 @@ use server::{Server, create_listener};
 use shared::config::{self};
 
 mod message_handler;
+mod exchanger;
 mod server;
 
 fn main() {
