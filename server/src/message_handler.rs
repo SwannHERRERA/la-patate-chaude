@@ -12,7 +12,7 @@ impl MessageHandler {
   }
 
   pub fn handle_message(&mut self, message: Message) -> Message {
-      info!("Hello: {:?}", message);
+      info!("Incomming Message: {:?}", message);
       match message {
         Message::Hello => self.handle_hello(),
         Message::Subscribe { name } => self.handle_subscribtion(name),

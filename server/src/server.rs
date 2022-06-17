@@ -1,7 +1,7 @@
 use crate::message_handler::MessageHandler;
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::io::{Read, Write};
-use log::{info, debug};
+use log::{info, debug, trace};
 use shared::config::{PORT, IP};
 use shared::message::Message;
 
@@ -19,13 +19,18 @@ impl Server {
 
   pub fn listen(&mut self) {
     for message in self.listener.incoming() {
-      debug!("message={message:?}");
-      let tcp_stream = message.unwrap();
-      let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
-      let response = self.message_handler.handle_message(parsed_message);
-      self.send_response(response, &tcp_stream);
+        debug!("message={message:?}");
+        let tcp_stream = message.unwrap();
+        let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
+        let response = self.message_handler.handle_message(parsed_message);
+        self.send_response(response, &tcp_stream);
+        loop {
+          let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
+          let response = self.message_handler.handle_message(parsed_message);
+          self.send_response(response, &tcp_stream);
+        }
+      }
     }
-  }
 
   fn parse_message_from_tcp_stream(&self, mut message: &TcpStream) -> Message {
     let mut message_size = [0; 4];
@@ -48,7 +53,7 @@ impl Server {
     let response_size = response.len() as u32;
     let response_length_as_bytes = response_size.to_be_bytes();
     let result = tcp_stream.write(&[&response_length_as_bytes, response].concat());
-    info!("byte write : {:?}, ", result);
+    trace!("byte write : {:?}, ", result);
   }
 }
 
