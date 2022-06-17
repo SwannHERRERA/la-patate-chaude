@@ -1,6 +1,8 @@
-use crate::message_handler::MessageHandler;
+use crate::message_handler::{MessageHandler};
 use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::io::{Read, Write};
+use std::io::{Read, Write, Error};
+use std::sync::{Arc, Mutex};
+use std::thread::{self, JoinHandle};
 use log::{info, debug, trace};
 use shared::config::{PORT, IP};
 use shared::message::Message;
@@ -9,28 +11,35 @@ use shared::message::Message;
 
 pub struct Server {
   listener: TcpListener,
-  message_handler: MessageHandler,
+  message_handler: Arc<Mutex<MessageHandler>>,
 }
 
-impl Server {
-  pub fn new(listener: TcpListener, message_handler: MessageHandler) -> Server {
-    Server { listener, message_handler }
+
+pub struct Exchanger {
+  message_handler: Arc<Mutex<MessageHandler>>,
+}
+
+impl Exchanger {
+
+  pub fn new(message_handler: Arc<Mutex<MessageHandler>>) -> Exchanger {
+    Exchanger { message_handler }
   }
 
-  pub fn listen(&mut self) {
-    for message in self.listener.incoming() {
-        debug!("message={message:?}");
-        let tcp_stream = message.unwrap();
-        let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
-        let response = self.message_handler.handle_message(parsed_message);
-        self.send_response(response, &tcp_stream);
-        loop {
-          let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
-          let response = self.message_handler.handle_message(parsed_message);
-          self.send_response(response, &tcp_stream);
-        }
-      }
+  pub fn hold_communcation(&mut self, stream: Result<TcpStream, Error>) {
+    let tcp_stream = stream.unwrap();
+    let mut message_handler = self.message_handler.lock().unwrap();
+    let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
+    let response = message_handler.handle_message(parsed_message);
+    self.send_response(response, &tcp_stream);
+    drop(message_handler);
+    loop {
+      let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
+      let mut message_handler = self.message_handler.lock().unwrap();
+      let response = message_handler.handle_message(parsed_message);
+      drop(message_handler);
+      self.send_response(response, &tcp_stream);
     }
+  }
 
   fn parse_message_from_tcp_stream(&self, mut message: &TcpStream) -> Message {
     let mut message_size = [0; 4];
@@ -55,6 +64,32 @@ impl Server {
     let result = tcp_stream.write(&[&response_length_as_bytes, response].concat());
     trace!("byte write : {:?}, ", result);
   }
+}
+
+
+
+impl Server {
+  pub fn new(listener: TcpListener, message_handler: MessageHandler) -> Server {
+    Server { listener, message_handler: Arc::new(Mutex::new(message_handler)) }
+  }
+
+  pub fn listen(&mut self) {
+    let mut hanldes: Vec<JoinHandle<()>> = Vec::new();
+    for message in self.listener.incoming() {
+      debug!("message={message:?}");
+      let message_handler = self.message_handler.clone();
+      let handle = thread::spawn(move || {
+        let mut exchanger = Exchanger::new(message_handler);
+        exchanger.hold_communcation(message);
+      });
+      hanldes.push(handle);
+    }
+    for handle in hanldes {
+      handle.join().unwrap();
+    }
+  }
+
+
 }
 
 
