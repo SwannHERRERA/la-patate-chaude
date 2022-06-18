@@ -1,5 +1,5 @@
 use log::{info, debug, trace};
-use shared::message::{Message, PublicLeaderBoard};
+use shared::message::Message;
 use shared::public_player::PublicPlayer;
 use shared::subscribe::{SubscribeResult, SubscribeError};
 #[derive(Debug)]
@@ -28,7 +28,8 @@ impl MessageHandler {
     } else {
       Message::SubscribeResult(SubscribeResult::Ok)
     };
-    let player = PublicPlayer::new(name, "".to_string(), 0, 0, true, 0.0);
+
+    let player = PublicPlayer::new(name);
     self.players.push(player);
     debug!("Answer: {:?}", answer);
     trace!("Players: {:?}", self.players);
@@ -92,7 +93,7 @@ mod tests {
   #[test]
   fn test_handle_subscribe_already_registered() {
     setup();
-    let mut handler = MessageHandler::new(vec![PublicPlayer::new("John".to_owned(), "".to_owned(), 0, 0, true, 0.0)]);
+    let mut handler = MessageHandler::new(vec![PublicPlayer::new("John".to_owned())]);
     let answer = handler.handle_subscribtion("John".to_owned());
     assert!(matches!(answer, Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))));
   }
