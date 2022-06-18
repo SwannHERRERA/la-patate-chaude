@@ -1,6 +1,6 @@
-use std::{sync::{Arc, Mutex, mpsc::Sender}, net::TcpStream, io::{Error, Read, Write}};
+use std::{sync::{Arc, Mutex, mpsc::Sender}, net::{TcpStream, Shutdown}, io::{Error, Read, Write}};
 
-use log::trace;
+use log::{trace, warn};
 use shared::message::Message;
 
 use crate::message_handler::MessageHandler;
@@ -18,17 +18,19 @@ impl Exchanger {
 
   pub fn hold_communcation(&mut self, stream: Result<TcpStream, Error>) {
     let tcp_stream = stream.unwrap();
-    let mut message_handler = self.message_handler.lock().unwrap();
-    let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
-    let response = message_handler.handle_message(parsed_message, self.tx.clone());
-    self.send_response(response, &tcp_stream);
-    drop(message_handler);
-    loop {
+    loop  {
       let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
       let mut message_handler = self.message_handler.lock().unwrap();
-      let response = message_handler.handle_message(parsed_message, self.tx.clone());
+      let response = message_handler.handle_message(parsed_message);
       drop(message_handler);
-      self.send_response(response, &tcp_stream);
+      if matches!(response.message, Message::EndOfCommunication) {
+        break;
+      }
+      self.send_response(response.message, &tcp_stream);
+    }
+    let shutdown_result = tcp_stream.shutdown(Shutdown::Both);
+    if shutdown_result.is_err() {
+      trace!("Shutdown failed: {:?}", shutdown_result);
     }
   }
 
@@ -43,7 +45,10 @@ impl Exchanger {
     let message = serde_json::from_str(&message);
     match message {
       Ok(m) => m,
-      Err(err) => panic!("Cannot parse message : {err:?}")
+      Err(err) => {
+        warn!("Cannot parse message : {:?}", err);
+        Message::EndOfCommunication
+      },
     }
   }
 

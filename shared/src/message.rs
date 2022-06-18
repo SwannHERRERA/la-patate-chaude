@@ -31,6 +31,29 @@ pub enum Message {
   EndOfGame {
     leader_board: Vec<PublicPlayer>,
   },
+  EndOfCommunication,
+}
+
+#[derive(Debug, Clone)]
+pub enum ResponseType {
+  Broadcast,
+  Unicast,
+}
+
+#[derive(Debug, Clone)]
+pub struct MessageType {
+    pub message: Message,
+    pub message_type: ResponseType,
+}
+
+impl MessageType {
+    pub fn boardcast(message: Message) -> MessageType {
+        MessageType { message, message_type: ResponseType::Broadcast }
+    }
+    pub fn unicast(message: Message) -> MessageType {
+        MessageType { message, message_type: ResponseType::Unicast }
+    }
+    
 }
 
 
