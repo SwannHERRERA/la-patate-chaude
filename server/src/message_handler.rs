@@ -1,13 +1,14 @@
 use log::{info, debug, trace};
-use shared::message::{Message, SubscribeResult, SubscribeError};
-
+use shared::message::{Message, PublicLeaderBoard};
+use shared::public_player::PublicPlayer;
+use shared::subscribe::{SubscribeResult, SubscribeError};
 #[derive(Debug)]
 pub struct MessageHandler {
-  players: Vec<String>,
+  players: Vec<PublicPlayer>,
 }
 
 impl MessageHandler {
-  pub fn new(players: Vec<String>) -> MessageHandler {
+  pub fn new(players: Vec<PublicPlayer>) -> MessageHandler {
     MessageHandler { players }
   }
 
@@ -16,17 +17,19 @@ impl MessageHandler {
       match message {
         Message::Hello => self.handle_hello(),
         Message::Subscribe { name } => self.handle_subscribtion(name),
+        Message::StartGame {  } => self.handle_start_game(),
         _ => panic!("Not implemented")
       }
   }
 
   fn handle_subscribtion(&mut self, name: String) -> Message {
-    let answer = if self.players.contains(&name) {
-       Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))
+    let answer = if self.has_player_with_name(&name) {
+      Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))
     } else {
       Message::SubscribeResult(SubscribeResult::Ok)
     };
-    self.players.push(name);
+    let player = PublicPlayer::new(name, "".to_string(), 0, 0, true, 0.0);
+    self.players.push(player);
     debug!("Answer: {:?}", answer);
     trace!("Players: {:?}", self.players);
     answer
@@ -38,6 +41,15 @@ impl MessageHandler {
     answer
   }
 
+  fn handle_start_game(&self) -> Message {
+    let answer = Message::PublicLeaderBoard(self.players.clone());
+    debug!("Answer: {:?}", answer);
+    answer
+  }
+
+  fn has_player_with_name(&self, name: &str) -> bool {
+    self.players.iter().any(|player| player.name == name)
+  }
 }
 
 
@@ -80,7 +92,7 @@ mod tests {
   #[test]
   fn test_handle_subscribe_already_registered() {
     setup();
-    let mut handler = MessageHandler::new(vec!["John".to_owned()]);
+    let mut handler = MessageHandler::new(vec![PublicPlayer::new("John".to_owned(), "".to_owned(), 0, 0, true, 0.0)]);
     let answer = handler.handle_subscribtion("John".to_owned());
     assert!(matches!(answer, Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))));
   }

@@ -1,61 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub enum SubscribeError {
-    AlreadyRegistered,
-    InvalidName,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ChallengeOutput;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct PublicPlayer {
-    pub name: String,
-    pub stream_id: String,
-    pub score: i32,
-    pub steps: u32,
-    pub is_active: bool,
-    pub total_used_time: f64,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum ChallengeAnswer {
-    ChallengeName(ChallengeOutput),
-}
-
-pub struct ChallengeResult {
-    pub name: ChallengeAnswer,
-    pub next_target: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum ChallengeValue {
-    Unreachable,
-    Timeout,
-    BadResult { used_time: f64, next_target: String },
-    Ok { used_time: f64, next_target: String },
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ReportedChallengeResult {
-    pub name: String,
-    pub value: ChallengeValue,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct MD5HashCash {
-    complexity: u8,
-    message: String,
-}
+use crate::{
+    public_player::PublicPlayer,
+    challenge::{MD5HashCash, ChallengeAnswer, ReportedChallengeResult},
+    subscribe::SubscribeResult
+};
 
 pub type PublicLeaderBoard = Vec<PublicPlayer>;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum SubscribeResult {
-    Ok,
-    Err (SubscribeError),
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
@@ -76,6 +27,7 @@ pub enum Message {
     challenge: String,
     chain: Vec<ReportedChallengeResult>,
   },
+  StartGame {},
   EndOfGame {
     leader_board: Vec<PublicPlayer>,
   },
@@ -84,6 +36,8 @@ pub enum Message {
 
 #[cfg(test)]
 mod tests {
+    use crate::subscribe::SubscribeError;
+
     use super::*;
 
     #[test]
