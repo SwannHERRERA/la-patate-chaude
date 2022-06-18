@@ -8,7 +8,7 @@ use crate::{
 
 pub type PublicLeaderBoard = Vec<PublicPlayer>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Message {
     Hello,
     Welcome { version: u8 },

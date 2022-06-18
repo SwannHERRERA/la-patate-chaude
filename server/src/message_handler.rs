@@ -1,3 +1,5 @@
+use std::sync::mpsc::Sender;
+
 use log::{info, debug, trace};
 use shared::message::Message;
 use shared::public_player::PublicPlayer;
@@ -12,12 +14,12 @@ impl MessageHandler {
     MessageHandler { players }
   }
 
-  pub fn handle_message(&mut self, message: Message) -> Message {
+  pub fn handle_message(&mut self, message: Message, tx: Sender<Message>) -> Message {
       info!("Incomming Message: {:?}", message);
       match message {
         Message::Hello => self.handle_hello(),
         Message::Subscribe { name } => self.handle_subscribtion(name),
-        Message::StartGame {  } => self.handle_start_game(),
+        Message::StartGame {  } => self.handle_start_game(tx),
         _ => panic!("Not implemented")
       }
   }
@@ -42,8 +44,9 @@ impl MessageHandler {
     answer
   }
 
-  fn handle_start_game(&self) -> Message {
+  fn handle_start_game(&self, tx: Sender<Message>) -> Message {
     let answer = Message::PublicLeaderBoard(self.players.clone());
+    tx.send(answer.clone()).unwrap();
     debug!("Answer: {:?}", answer);
     answer
   }

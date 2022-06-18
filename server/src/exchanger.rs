@@ -1,4 +1,4 @@
-use std::{sync::{Arc, Mutex}, net::TcpStream, io::{Error, Read, Write}};
+use std::{sync::{Arc, Mutex, mpsc::Sender}, net::TcpStream, io::{Error, Read, Write}};
 
 use log::trace;
 use shared::message::Message;
@@ -7,25 +7,26 @@ use crate::message_handler::MessageHandler;
 
 pub struct Exchanger {
   message_handler: Arc<Mutex<MessageHandler>>,
+  tx: Sender<Message>,
 }
 
 impl Exchanger {
 
-  pub fn new(message_handler: Arc<Mutex<MessageHandler>>) -> Exchanger {
-    Exchanger { message_handler }
+  pub fn new(message_handler: Arc<Mutex<MessageHandler>>, tx: Sender<Message>) -> Exchanger {
+    Exchanger { message_handler, tx }
   }
 
   pub fn hold_communcation(&mut self, stream: Result<TcpStream, Error>) {
     let tcp_stream = stream.unwrap();
     let mut message_handler = self.message_handler.lock().unwrap();
     let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
-    let response = message_handler.handle_message(parsed_message);
+    let response = message_handler.handle_message(parsed_message, self.tx.clone());
     self.send_response(response, &tcp_stream);
     drop(message_handler);
     loop {
       let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
       let mut message_handler = self.message_handler.lock().unwrap();
-      let response = message_handler.handle_message(parsed_message);
+      let response = message_handler.handle_message(parsed_message, self.tx.clone());
       drop(message_handler);
       self.send_response(response, &tcp_stream);
     }
