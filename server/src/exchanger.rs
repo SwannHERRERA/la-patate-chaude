@@ -1,7 +1,7 @@
 use std::{sync::{Arc, Mutex, mpsc::Sender}, net::{TcpStream, Shutdown}, io::{Error, Read, Write}};
 
 use log::{trace, warn};
-use shared::message::Message;
+use shared::message::{Message, ResponseType};
 
 use crate::message_handler::MessageHandler;
 
@@ -26,7 +26,16 @@ impl Exchanger {
       if matches!(response.message, Message::EndOfCommunication) {
         break;
       }
-      self.send_response(response.message, &tcp_stream);
+      match response.message_type {
+        ResponseType::Broadcast => {
+          trace!("Broadcast: {:?}", response.message);
+          self.tx.send(response.message).unwrap();
+        }
+        ResponseType::Unicast => {
+          trace!("Unicast: {:?}", response.message);
+          self.send_response(response.message, &tcp_stream);
+        }
+      }
     }
     let shutdown_result = tcp_stream.shutdown(Shutdown::Both);
     if shutdown_result.is_err() {

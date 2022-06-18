@@ -18,11 +18,10 @@ impl Server {
   }
 
   pub fn listen(&mut self) {
-    let mut hanldes: Vec<JoinHandle<()>> = Vec::new();
+    let mut handles: Vec<JoinHandle<()>> = Vec::new();
     let (tx, rx) = mpsc::channel::<Message>();
-    if let Ok(msg) = rx.try_recv() {
-      info!("rx recieve : {:?}", msg);
-    }
+
+    handles.push(self.listen_broadcast(rx));
     for message in self.listener.incoming() {
       debug!("message={message:?}");
       let message_handler = self.message_handler.clone();
@@ -31,11 +30,27 @@ impl Server {
         let mut exchanger = Exchanger::new(message_handler, tx);
         exchanger.hold_communcation(message);
       });
-      hanldes.push(handle);
+      handles.push(handle);
     }
-    for handle in hanldes {
+    for handle in handles {
       handle.join().unwrap();
     }
+  }
+
+  fn listen_broadcast(&mut self, rx: mpsc::Receiver<Message>) -> JoinHandle<()> {
+    let broadcast_reciever = thread::spawn(move || loop {
+      match rx.recv() {
+        Ok(msg) => {
+          info!("rx recieve : {:?}", msg);
+          // TODO send to all clients
+        }
+        Err(err) => {
+          info!("rx recieve error : {:?}", err);
+          break;
+        }
+      }
+    });
+    broadcast_reciever
   }
 }
 

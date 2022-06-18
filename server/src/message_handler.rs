@@ -18,6 +18,7 @@ impl MessageHandler {
         Message::Hello => self.handle_hello(),
         Message::Subscribe { name } => self.handle_subscribtion(name),
         Message::StartGame {  } => self.handle_start_game(),
+        Message::EndOfCommunication => MessageType::unicast(Message::EndOfCommunication),
         _ => panic!("Not implemented")
       }
   }
