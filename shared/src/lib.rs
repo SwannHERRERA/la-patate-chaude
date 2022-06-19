@@ -2,7 +2,6 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use std::u64;
 
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -35,7 +34,8 @@ pub struct PublicPlayer {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeAnswer {
-    MD5HashCash(MD5HashCashOutput)
+    None,
+    MD5HashCash(MD5HashCashOutput),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -66,6 +66,21 @@ pub struct MD5HashCash(MD5HashCashInput);
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeType {
     MD5HashCash(MD5HashCash),
+}
+
+impl Clone for ChallengeType {
+    fn clone(&self) -> Self {
+        match self {
+            ChallengeType::MD5HashCash(challenge) => {
+                ChallengeType::MD5HashCash(Challenge::new(
+                    MD5HashCashInput {
+                        message: challenge.0.message.clone(),
+                        complexity: challenge.0.complexity.clone(),
+                    })
+                )
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -136,10 +151,8 @@ impl Challenge for MD5HashCash {
     }
 }
 
-const NTHREADS: u32 = 10;
-
 fn check_hash(mut complexity: u32, hash: &str) -> bool {
-    let bit_compare = (1 << 63);
+    let bit_compare = 1 << 63;
     let mut sum = u64::from_str_radix(hash, 16).unwrap();
     while complexity > 0 {
         if (sum & bit_compare) > 0 {
