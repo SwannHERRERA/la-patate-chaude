@@ -2,6 +2,7 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use std::u64;
 
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -133,7 +134,8 @@ impl Challenge for MD5HashCash {
 
     fn solve(&self) -> Self::Output {
         let mut md5;
-        let mut seed: u64 = 0;
+        let mut rng = rand::thread_rng();
+        let mut seed: u64 = rng.gen::<u64>();
         loop {
             md5 = hash_md5(format!("{:016X}", seed) + &self.0.message.to_string());
             let (a, _) = md5.split_at(16);

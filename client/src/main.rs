@@ -3,7 +3,6 @@ use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::thread::JoinHandle;
-use std::time::Duration;
 
 use rand;
 use rand::Rng;
@@ -119,7 +118,7 @@ impl Client {
             thread::spawn(move || {
                 loop {
                     let challenge = worker_rx.recv().unwrap();
-                    thread::sleep(Duration::from_secs(1));
+                    //thread::sleep(Duration::from_secs(1));
                     println!("Worker thread {:?} processing {:?}", i, challenge);
                     let answer = solve_challenge(challenge);
                     println!("Worker thread {:?} found solution {:?}", i, answer);
