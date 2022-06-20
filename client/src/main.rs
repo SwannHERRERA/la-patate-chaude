@@ -8,10 +8,10 @@ use rand;
 use rand::Rng;
 
 use shared::{Challenge, ChallengeAnswer, ChallengeType, Message, PublicLeaderBoard};
+use shared::Message::ChallengeResult;
 
 const IP: &'static str = "127.0.0.1";
 const PORT: u16 = 7878;
-const NTHREADS: usize = 100;
 
 fn main() {
     let address = format!("{}:{}", IP, PORT);
@@ -37,22 +37,19 @@ fn solve_challenge(challenge: ChallengeType) -> ChallengeAnswer {
 
 pub struct Client {
     public_leader_board: PublicLeaderBoard,
-    workers_tx: Vec<Sender<ChallengeType>>,
 }
 
 impl Client {
     fn new() -> Client {
         Client {
             public_leader_board: vec![],
-            workers_tx: vec![],
         }
     }
 
-    fn start_threads(mut self, stream: TcpStream) {
+    fn start_threads(self, stream: TcpStream) {
         let (writer_tx, writer_rx) = mpsc::channel();
         let stream_cpy = stream.try_clone().unwrap();
         self.start_message_sender(stream, writer_rx);
-        self.start_workers(NTHREADS, writer_tx.clone());
         writer_tx.send(Message::Hello).unwrap();
         self.start_message_listener(stream_cpy, writer_tx.clone());
     }
@@ -87,9 +84,8 @@ impl Client {
                 writer_tx.send(answer).unwrap();
             }
             Message::Challenge(challenge) => {
-                for worker in &self.workers_tx {
-                    worker.send(challenge.clone()).unwrap();
-                }
+                let challenge_answer = solve_challenge(challenge);
+                writer_tx.send(ChallengeResult { answer: challenge_answer, next_target: "".to_string() }).unwrap();
             }
             _ => {}
         }
@@ -108,24 +104,5 @@ impl Client {
                 }
             }
         });
-    }
-
-    fn start_workers(&mut self, count: usize, writer_tx: Sender<Message>) {
-        for i in 0..count {
-            let (worker_tx, worker_rx) = mpsc::channel();
-            self.workers_tx.push(worker_tx);
-            let writer_tx = writer_tx.clone();
-            thread::spawn(move || {
-                loop {
-                    let challenge = worker_rx.recv().unwrap();
-                    //thread::sleep(Duration::from_secs(1));
-                    println!("Worker thread {:?} processing {:?}", i, challenge);
-                    let answer = solve_challenge(challenge);
-                    println!("Worker thread {:?} found solution {:?}", i, answer);
-                    let message = Message::ChallengeResult { answer, next_target: "".to_string() };
-                    writer_tx.send(message).unwrap();
-                }
-            });
-        }
     }
 }

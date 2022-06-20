@@ -1,9 +1,13 @@
+use std::thread;
 use std::io::Write;
 use std::process::{Command, Stdio};
-use std::u64;
+use std::sync::{Arc, mpsc};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Instant;
 
-use rand::Rng;
 use serde::{Deserialize, Serialize};
+
+const NTHREADS: usize = 100;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SubscribeError {
@@ -69,21 +73,6 @@ pub enum ChallengeType {
     MD5HashCash(MD5HashCash),
 }
 
-impl Clone for ChallengeType {
-    fn clone(&self) -> Self {
-        match self {
-            ChallengeType::MD5HashCash(challenge) => {
-                ChallengeType::MD5HashCash(Challenge::new(
-                    MD5HashCashInput {
-                        message: challenge.0.message.clone(),
-                        complexity: challenge.0.complexity.clone(),
-                    })
-                )
-            }
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
     Hello,
@@ -133,19 +122,35 @@ impl Challenge for MD5HashCash {
     }
 
     fn solve(&self) -> Self::Output {
-        let mut md5;
-        let mut rng = rand::thread_rng();
-        let mut seed: u64 = rng.gen::<u64>();
-        loop {
-            md5 = hash_md5(format!("{:016X}", seed) + &self.0.message.to_string());
-            let (a, _) = md5.split_at(16);
-            if check_hash(self.0.complexity, a) {
-                break;
-            }
-            seed += 1;
+        let now = Instant::now();
+        let seed_counter = Arc::new(AtomicU64::new(0));
+        let (worker_tx, worker_rx) = mpsc::channel();
+        for _ in 0..NTHREADS {
+            let worker_tx = worker_tx.clone();
+            let seed_counter = seed_counter.clone();
+            let message = self.0.message.to_string();
+            let complexity = self.0.complexity;
+            thread::spawn(move || {
+                loop {
+                    if seed_counter.load(Ordering::Relaxed) == u64::MAX {
+                        break;
+                    }
+                    let seed = seed_counter.fetch_add(1, Ordering::Relaxed);
+                    let md5 = hash_md5(format!("{:016X}", seed) + &message);
+                    if !check_hash(complexity, md5.clone()) {
+                        continue;
+                    }
+                    worker_tx.send(MD5HashCashOutput { seed, hashcode: md5.to_string() }).unwrap();
+                }
+            });
         }
-
-        MD5HashCashOutput { seed, hashcode: md5.to_string() }
+        let elapsed = now.elapsed();
+        println!("Thread creation time elapsed 1: {:.2?}", elapsed);
+        let out = worker_rx.recv().unwrap();
+        let elapsed = now.elapsed();
+        println!("Challenge solve time elapsed 2: {:.2?}", elapsed);
+        seed_counter.store(u64::MAX, Ordering::Relaxed);
+        out
     }
 
     fn verify(&self, answer: Self::Output) -> bool {
@@ -153,9 +158,9 @@ impl Challenge for MD5HashCash {
     }
 }
 
-fn check_hash(mut complexity: u32, hash: &str) -> bool {
-    let bit_compare = 1 << 63;
-    let mut sum = u64::from_str_radix(hash, 16).unwrap();
+fn check_hash(mut complexity: u32, hash: String) -> bool {
+    let bit_compare = 1 << 127;
+    let mut sum = u128::from_str_radix(&*hash, 16).unwrap();
     while complexity > 0 {
         if (sum & bit_compare) > 0 {
             break;
