@@ -1,8 +1,6 @@
-use std::thread;
-use std::io::Write;
-use std::process::{Command, Stdio};
 use std::sync::{Arc, mpsc};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::thread;
 use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
@@ -136,7 +134,9 @@ impl Challenge for MD5HashCash {
                         break;
                     }
                     let seed = seed_counter.fetch_add(1, Ordering::Relaxed);
-                    let md5 = hash_md5(format!("{:016X}", seed) + &message);
+                    let hash = md5::compute(format!("{:016X}", seed) + &message);
+                    ;
+                    let md5 = format!("{:032X}", hash);
                     if !check_hash(complexity, md5.clone()) {
                         continue;
                     }
@@ -170,23 +170,6 @@ fn check_hash(mut complexity: u32, hash: String) -> bool {
     }
     complexity == 0
 }
-
-fn hash_md5(data: String) -> String {
-    let mut md5_cmd = Command::new("md5sum")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
-    {
-        let child_stdin = md5_cmd.stdin.as_mut().unwrap();
-        child_stdin.write_all(data.as_bytes()).expect("Error while writing to md5 stdin");
-    }
-
-    let output = md5_cmd.wait_with_output().unwrap();
-    let md5 = String::from_utf8_lossy(&output.stdout);
-    md5.split(" ").next().unwrap().to_ascii_uppercase()
-}
-
 
 #[cfg(test)]
 mod tests {
