@@ -7,23 +7,20 @@ use std::thread::JoinHandle;
 use rand;
 use rand::Rng;
 
-use shared::{Challenge, ChallengeAnswer, ChallengeType, Message, PublicLeaderBoard};
-use shared::Message::ChallengeResult;
-
-const IP: &'static str = "127.0.0.1";
-const PORT: u16 = 7878;
+use shared::challenge::Challenge;
+use shared::config::{IP, PORT};
+use shared::message::{ChallengeAnswer, ChallengeType, Message, PublicLeaderBoard};
+use shared::message::Message::ChallengeResult;
 
 fn main() {
-    let address = format!("{}:{}", IP, PORT);
+    let ip_as_string = IP.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(".");
+    let address = format!("{}:{}", ip_as_string, PORT);
     match TcpStream::connect(address) {
         Ok(stream) => {
             let client = Client::new();
             client.start_threads(stream);
         },
-        Err(e) => {
-            println!("{:?}", e);
-            panic!("Could not connect to server {} on port {}", IP, PORT);
-        },
+        Err(_) => panic!("Could not connect to server {:?} on port {}", IP, PORT),
     }
 }
 
