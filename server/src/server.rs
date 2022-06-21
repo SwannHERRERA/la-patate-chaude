@@ -11,11 +11,11 @@ use shared::message::Message;
 pub struct Server {
   listener: TcpListener,
   message_handler: Arc<Mutex<MessageHandler>>,
-  streams: Vec<Arc<TcpStream>>,
+  streams: Vec<Arc<Mutex<TcpStream>>>,
 }
 
 impl Server {
-  pub fn new(listener: TcpListener, message_handler: MessageHandler, streams: Vec<Arc<TcpStream>>) -> Server {
+  pub fn new(listener: TcpListener, message_handler: MessageHandler, streams: Vec<Arc<Mutex<TcpStream>>>) -> Server {
     Server { listener, message_handler: Arc::new(Mutex::new(message_handler)), streams }
   }
 
@@ -25,15 +25,16 @@ impl Server {
 
     handles.push(self.listen_broadcast(rx));
 
-    for message in self.listener.incoming() {
-      let message = message.unwrap();
-      self.streams.push(Arc::new(message.try_clone().unwrap()));
-      debug!("message={message:?}");
+    for stream in self.listener.incoming() {
+      let stream = stream.unwrap();
+      self.streams.push(Arc::new(Mutex::new(stream.try_clone().unwrap())));
+      info!("streams={:?}", self.streams);
+      debug!("message={stream:?}");
       let message_handler = self.message_handler.clone();
       let tx = tx.clone();
       let handle = thread::spawn(move || {
         let mut exchanger = Exchanger::new(message_handler, tx);
-        exchanger.hold_communcation(message);
+        exchanger.hold_communcation(stream);
       });
       handles.push(handle);
     }
@@ -43,18 +44,18 @@ impl Server {
   }
 
   fn listen_broadcast(&self, rx: mpsc::Receiver<Message>) -> JoinHandle<()> {
-    let message_handler = self.message_handler.clone();
-    let s = vec![];
-    let broadcast_reciever = thread::spawn(|| loop {
+    let streams = self.streams.clone();
+    let broadcast_reciever = thread::spawn(move || loop {
+      info!("{:?}", streams);
       match rx.recv() {
         Ok(msg) => {
           info!("rx recieve : {:?}", msg);
-          let message_handler = message_handler.lock().unwrap();
-          for stream in self.streams {
+          for stream in &streams {
             let response = serde_json::to_string(&msg).unwrap();
             let response = response.as_bytes();
             let response_size = response.len() as u32;
             let response_length_as_bytes = response_size.to_be_bytes();
+            let mut stream = stream.lock().unwrap();
             let result = stream.write(&[&response_length_as_bytes, response].concat());
             trace!("byte write : {:?}, ", result);
           }
