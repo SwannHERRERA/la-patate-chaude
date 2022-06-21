@@ -2,6 +2,7 @@ use message_handler::MessageHandler;
 use server::{Server, create_listener};
 use shared::config;
 
+mod player;
 mod message_handler;
 mod exchanger;
 mod server;

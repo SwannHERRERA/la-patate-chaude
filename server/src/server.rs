@@ -27,7 +27,6 @@ impl Server {
 
     for stream in self.listener.incoming() {
       let stream = stream.unwrap();
-      self.streams.push(Arc::new(Mutex::new(stream.try_clone().unwrap())));
       info!("streams={:?}", self.streams);
       debug!("message={stream:?}");
       let message_handler = self.message_handler.clone();
@@ -46,7 +45,7 @@ impl Server {
   fn listen_broadcast(&self, rx: mpsc::Receiver<Message>) -> JoinHandle<()> {
     let streams = self.streams.clone();
     let broadcast_reciever = thread::spawn(move || loop {
-      info!("{:?}", streams);
+      info!("streams {:?}", streams);
       match rx.recv() {
         Ok(msg) => {
           info!("rx recieve : {:?}", msg);
