@@ -1,6 +1,6 @@
-use std::{sync::{Arc, Mutex, mpsc::Sender}, net::{TcpStream, Shutdown}, io::{Error, Read, Write}};
+use std::{sync::{Arc, Mutex, mpsc::Sender}, net::{TcpStream, Shutdown}, io::{Read, Write}};
 
-use log::{trace, warn};
+use log::{trace, warn, info};
 use shared::message::{Message, ResponseType};
 
 use crate::message_handler::MessageHandler;
@@ -16,10 +16,10 @@ impl Exchanger {
     Exchanger { message_handler, tx }
   }
 
-  pub fn hold_communcation(&mut self, stream: Result<TcpStream, Error>) {
-    let tcp_stream = stream.unwrap();
+  pub fn hold_communcation(&mut self, stream: TcpStream) {
+    info!("peer address={:?}", stream.peer_addr());
     loop  {
-      let parsed_message = self.parse_message_from_tcp_stream(&tcp_stream);
+      let parsed_message = self.parse_message_from_tcp_stream(&stream);
       let mut message_handler = self.message_handler.lock().unwrap();
       let response = message_handler.handle_message(parsed_message);
       drop(message_handler);
@@ -33,11 +33,11 @@ impl Exchanger {
         }
         ResponseType::Unicast => {
           trace!("Unicast: {:?}", response.message);
-          self.send_response(response.message, &tcp_stream);
+          self.send_response(response.message, &stream);
         }
       }
     }
-    let shutdown_result = tcp_stream.shutdown(Shutdown::Both);
+    let shutdown_result = stream.shutdown(Shutdown::Both);
     if shutdown_result.is_err() {
       trace!("Shutdown failed: {:?}", shutdown_result);
     }
@@ -61,7 +61,7 @@ impl Exchanger {
     }
   }
 
-  fn send_response(&self, response: Message, mut tcp_stream: &TcpStream) {
+  pub fn send_response(&self, response: Message, mut tcp_stream: &TcpStream) {
     let response = serde_json::to_string(&response).unwrap();
     let response = response.as_bytes();
     let response_size = response.len() as u32;

@@ -11,7 +11,7 @@ fn main() {
   pretty_env_logger::init();
   let listener = create_listener();
   let message_handler = MessageHandler::new(vec![]);
-  let mut server = Server::new(listener, message_handler);
+  let mut server = Server::new(listener, message_handler, vec![]);
   server.listen();
 }
 
