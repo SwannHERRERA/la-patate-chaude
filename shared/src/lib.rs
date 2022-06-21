@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 
-const NTHREADS: usize = 100;
+const NTHREADS: usize = 50;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SubscribeError {
