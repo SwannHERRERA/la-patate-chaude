@@ -1,17 +1,17 @@
-use std::sync::{Arc, Mutex};
 use std::net::TcpStream;
 use shared::public_player::PublicPlayer;
 
+#[derive(Debug)]
 pub struct Player {
-  info_public: PublicPlayer,
-  tcp_stream: Arc<Mutex<TcpStream>>,
+  pub info_public: PublicPlayer,
+  pub tcp_stream: TcpStream,
 }
 
 impl Player {
   pub fn new(info_public: PublicPlayer, tcp_stream: TcpStream) -> Player {
     Player {
       info_public,
-      tcp_stream: Arc::new(Mutex::new(tcp_stream)),
+      tcp_stream: tcp_stream,
     }
   }
 }

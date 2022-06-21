@@ -4,7 +4,7 @@ use shared::public_player::PublicPlayer;
 use shared::subscribe::{SubscribeResult, SubscribeError};
 #[derive(Debug)]
 pub struct MessageHandler {
-  players: Vec<PublicPlayer>,
+  players: Vec<PublicPlayer>, // TODO change this with the one in server
 }
 
 impl MessageHandler {
@@ -30,7 +30,6 @@ impl MessageHandler {
       Message::SubscribeResult(SubscribeResult::Ok)
     };
     let answer = MessageType::unicast(answer);
-
     let player = PublicPlayer::new(name);
     self.players.push(player);
     debug!("Answer: {:?}", answer);
