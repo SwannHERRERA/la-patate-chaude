@@ -7,9 +7,6 @@ pub enum SubscribeError {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ChallengeOutput;
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct PublicPlayer {
     pub name: String,
     pub stream_id: String,
@@ -21,12 +18,7 @@ pub struct PublicPlayer {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeAnswer {
-    ChallengeName(ChallengeOutput),
-}
-
-pub struct ChallengeResult {
-    pub name: ChallengeAnswer,
-    pub next_target: String,
+    MD5HashCash(MD5HashCashOutput),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -41,12 +33,6 @@ pub enum ChallengeValue {
 pub struct ReportedChallengeResult {
     pub name: String,
     pub value: ChallengeValue,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct MD5HashCash {
-    complexity: u8,
-    message: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -69,6 +55,26 @@ pub enum SubscribeResult {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct MD5HashCashOutput {
+    pub seed: u64,
+    pub hashcode: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MD5HashCashInput {
+    pub(crate) complexity: u32,
+    pub(crate) message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MD5HashCash(pub(crate) MD5HashCashInput);
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ChallengeType {
+    MD5HashCash(MD5HashCash),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
     Hello,
     Welcome {
@@ -79,12 +85,7 @@ pub enum Message {
     },
     SubscribeResult(SubscribeResult),
     PublicLeaderBoard(PublicLeaderBoard),
-    Challenge {
-        #[serde(rename = "MD5HashCash")]
-        md5_hash_cash: MD5HashCash,
-        #[serde(rename = "ChallengeOutput")]
-        recover_secret: RecoverSecretInput
-    },
+    Challenge(ChallengeType),
     ChallengeResult {
         answer: ChallengeAnswer,
         next_target: String,
@@ -118,9 +119,7 @@ mod tests {
 
     #[test]
     fn test_subscribe_serialization() {
-        let message = Message::Subscribe {
-            name: "test".to_string(),
-        };
+        let message = Message::Subscribe { name: "test".to_string() };
         let serialized = serde_json::to_string(&message).unwrap();
         assert_eq!(serialized, "{\"Subscribe\":{\"name\":\"test\"}}");
     }
@@ -136,9 +135,6 @@ mod tests {
     fn test_subscribe_result_failure_serialization() {
         let message = Message::SubscribeResult(SubscribeResult::Err(SubscribeError::InvalidName));
         let serialized = serde_json::to_string(&message).unwrap();
-        assert_eq!(
-            serialized,
-            "{\"SubscribeResult\":{\"Err\":\"InvalidName\"}}"
-        );
+        assert_eq!(serialized, "{\"SubscribeResult\":{\"Err\":\"InvalidName\"}}");
     }
 }
