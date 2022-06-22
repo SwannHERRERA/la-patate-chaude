@@ -44,7 +44,7 @@ impl Server {
         let message = serde_json::from_str(&message);
         match message {
             Ok(m) => m,
-            Err(_) => panic!("Cannot parse message : {err:?}")
+            Err(err) => panic!("Cannot parse message : {err:?}")
         }
     }
 
