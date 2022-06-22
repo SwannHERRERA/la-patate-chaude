@@ -21,7 +21,7 @@ impl Exchanger {
     loop  {
       let parsed_message = self.parse_message_from_tcp_stream(&stream);
       let mut message_handler = self.message_handler.lock().unwrap();
-      let response = message_handler.handle_message(parsed_message);
+      let response = message_handler.handle_message(parsed_message, &stream);
       drop(message_handler);
       if matches!(response.message, Message::EndOfCommunication) {
         break;
@@ -43,13 +43,13 @@ impl Exchanger {
     }
   }
 
-  fn parse_message_from_tcp_stream(&self, mut message: &TcpStream) -> Message {
+  fn parse_message_from_tcp_stream(&self, mut stream: &TcpStream) -> Message {
     let mut message_size = [0; 4];
-    let _size_error = message.read(&mut message_size);
+    let _size_error = stream.read(&mut message_size);
     let decimal_size = u32::from_be_bytes(message_size);
 
     let mut bytes_of_message = vec![0; decimal_size as usize];
-    let _size_read = message.read_exact(&mut bytes_of_message);
+    let _size_read = stream.read_exact(&mut bytes_of_message);
     let message = String::from_utf8_lossy(&bytes_of_message);
     let message = serde_json::from_str(&message);
     match message {

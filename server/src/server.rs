@@ -29,12 +29,11 @@ impl Server {
     for stream in self.listener.incoming() {
       let stream = stream.unwrap();
       let stream_copy = stream.try_clone().unwrap();
-      info!("players={:?}", self.players);
+      info!("players={:?}", self.players.get_players());
       let message_handler = self.message_handler.clone();
       let tx = tx.clone();
-      let players = self.players.clone();
       let handle = thread::spawn(move || {
-        let mut exchanger = Exchanger::new(message_handler, tx, players);
+        let mut exchanger = Exchanger::new(message_handler, tx);
         exchanger.hold_communcation(stream_copy);
       });
       handles.push(handle);
@@ -46,7 +45,7 @@ impl Server {
 
   fn listen_broadcast(&self, rx: mpsc::Receiver<Message>) -> JoinHandle<()> {
     let players = self.players.players.clone();
-    info!("players {:?}", self.players);
+    info!("players {:?}", self.players.get_players());
     let broadcast_reciever = thread::spawn(move || loop {
       let mut players = players.lock().unwrap();
       match rx.recv() {

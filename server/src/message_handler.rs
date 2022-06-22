@@ -15,25 +15,25 @@ impl MessageHandler {
     MessageHandler { players }
   }
 
-  pub fn handle_message(&mut self, message: Message, stream: TcpStream) -> MessageType {
+  pub fn handle_message(&mut self, message: Message, stream: &TcpStream) -> MessageType {
       info!("Incomming Message: {:?}", message);
       match message {
         Message::Hello => self.handle_hello(),
         Message::Subscribe { name } => self.handle_subscribtion(name, stream),
         Message::StartGame {  } => self.handle_start_game(),
-        Message::EndOfCommunication => MessageType::unicast(Message::EndOfCommunication),
+        Message::EndOfCommunication =>self.handle_end_of_communication(stream),
         _ => panic!("Not implemented")
       }
   }
 
-  fn handle_subscribtion(&mut self, name: String, stream: TcpStream) -> MessageType {
+  fn handle_subscribtion(&mut self, name: String, stream: &TcpStream) -> MessageType {
     let answer = if self.players.has_player_with_name(&name) {
       Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))
     } else {
       Message::SubscribeResult(SubscribeResult::Ok)
     };
     let answer = MessageType::unicast(answer);
-    let player = Player::new(PublicPlayer::new(name), stream);
+    let player = Player::new(PublicPlayer::new(name), stream.try_clone().unwrap());
     self.players.add_player(player);
     debug!("Answer: {:?}", answer);
     trace!("Players: {:?}", self.players);
@@ -50,6 +50,13 @@ impl MessageHandler {
     let strat_game_message = Message::PublicLeaderBoard(self.players.get_players());
     debug!("Start Game Message: {:?}", strat_game_message);
     let answer = MessageType::boardcast(strat_game_message);
+    debug!("Answer: {:?}", answer);
+    answer
+  }
+
+  fn handle_end_of_communication(&self, stream: &TcpStream) -> MessageType {
+    let answer = MessageType::unicast(Message::EndOfCommunication);
+    info!("stream id: {:?}", stream.peer_addr());
     debug!("Answer: {:?}", answer);
     answer
   }
