@@ -1,4 +1,4 @@
-use std::net::TcpStream;
+use std::{net::TcpStream, sync::Mutex, lazy::SyncOnceCell};
 use shared::public_player::PublicPlayer;
 
 #[derive(Debug)]
@@ -14,4 +14,31 @@ impl Player {
       tcp_stream: tcp_stream,
     }
   }
+}
+
+struct PlayerList {
+  players: &'static Mutex<Vec<Player>>,
+}
+
+pub fn get_player_list() -> PlayerList {
+  static INSTANCE: SyncOnceCell<Mutex<Vec<Player>>> = SyncOnceCell::new();
+  PlayerList {
+    players: INSTANCE.get_or_init(|| Mutex::new(Vec::new())),
+  }
+}
+
+impl PlayerList {
+    fn new() -> PlayerList {
+        PlayerList {
+            players: Vec::new(),
+        }
+    }
+
+    fn add_player(&mut self, player: Player) {
+        self.players.push(player);
+    }
+
+    fn remove_player(&mut self, player: Player) {
+        self.players.retain(|p| p.info_public.name != player.info_public.name);
+    }
 }

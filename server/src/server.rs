@@ -5,7 +5,7 @@ use std::io::Write;
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
-use log::{info, debug, trace};
+use log::{info, trace};
 use shared::config::{PORT, IP};
 use shared::message::Message;
 use shared::public_player::PublicPlayer;
@@ -21,6 +21,10 @@ impl Server {
     Server { listener, message_handler: Arc::new(Mutex::new(message_handler)), players }
   }
 
+  fn push_player(&mut self, player: Arc<Mutex<Player>>) {
+    self.players.push(player);
+  }
+
   pub fn listen(&mut self) {
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
     let (tx, rx) = mpsc::channel::<Message>();
@@ -31,8 +35,8 @@ impl Server {
       let stream = stream.unwrap();
       let stream_copy = stream.try_clone().unwrap();
       // TODO fix issue when user is start_game
-      let player = Arc::new(Mutex::new(Player::new(PublicPlayer::new("test".to_owned()), stream)));
-      self.players.push(player.clone());
+      
+      self.players.push(player);
       info!("players={:?}", self.players);
       let message_handler = self.message_handler.clone();
       let tx = tx.clone();
