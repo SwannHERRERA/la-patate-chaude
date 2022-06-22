@@ -1,28 +1,23 @@
 use crate::exchanger::Exchanger;
 use crate::message_handler::MessageHandler;
-use crate::player::Player;
+use crate::player::PlayerList;
 use std::io::Write;
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
 use log::{info, trace};
 use shared::config::{PORT, IP};
 use shared::message::Message;
-use shared::public_player::PublicPlayer;
 
 pub struct Server {
   listener: TcpListener,
   message_handler: Arc<Mutex<MessageHandler>>,
-  players: Vec<Arc<Mutex<Player>>>,
+  players: PlayerList,
 }
 
 impl Server {
-  pub fn new(listener: TcpListener, message_handler: MessageHandler, players: Vec<Arc<Mutex<Player>>>) -> Server {
+  pub fn new(listener: TcpListener, message_handler: MessageHandler, players: PlayerList) -> Server {
     Server { listener, message_handler: Arc::new(Mutex::new(message_handler)), players }
-  }
-
-  fn push_player(&mut self, player: Arc<Mutex<Player>>) {
-    self.players.push(player);
   }
 
   pub fn listen(&mut self) {
@@ -34,14 +29,12 @@ impl Server {
     for stream in self.listener.incoming() {
       let stream = stream.unwrap();
       let stream_copy = stream.try_clone().unwrap();
-      // TODO fix issue when user is start_game
-      
-      self.players.push(player);
       info!("players={:?}", self.players);
       let message_handler = self.message_handler.clone();
       let tx = tx.clone();
+      let players = self.players.clone();
       let handle = thread::spawn(move || {
-        let mut exchanger = Exchanger::new(message_handler, tx);
+        let mut exchanger = Exchanger::new(message_handler, tx, players);
         exchanger.hold_communcation(stream_copy);
       });
       handles.push(handle);
@@ -52,18 +45,19 @@ impl Server {
   }
 
   fn listen_broadcast(&self, rx: mpsc::Receiver<Message>) -> JoinHandle<()> {
-    let players = self.players.clone();
+    let players = self.players.players.clone();
+    info!("players {:?}", self.players);
     let broadcast_reciever = thread::spawn(move || loop {
-      info!("players {:?}", players);
+      let mut players = players.lock().unwrap();
       match rx.recv() {
         Ok(msg) => {
           info!("rx recieve : {:?}", msg);
-          for player in &players {
+          for player in players.iter_mut() {
+
             let response = serde_json::to_string(&msg).unwrap();
             let response = response.as_bytes();
             let response_size = response.len() as u32;
             let response_length_as_bytes = response_size.to_be_bytes();
-            let mut player = player.lock().unwrap();
             let result = player.tcp_stream.write(&[&response_length_as_bytes, response].concat());
 
             trace!("byte write : {:?}, ", result);

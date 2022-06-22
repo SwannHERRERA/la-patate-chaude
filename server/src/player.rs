@@ -1,4 +1,4 @@
-use std::{net::TcpStream, sync::Mutex, lazy::SyncOnceCell};
+use std::{net::TcpStream, sync::{Mutex, Arc}};
 use shared::public_player::PublicPlayer;
 
 #[derive(Debug)]
@@ -16,29 +16,31 @@ impl Player {
   }
 }
 
-struct PlayerList {
-  players: &'static Mutex<Vec<Player>>,
-}
-
-pub fn get_player_list() -> PlayerList {
-  static INSTANCE: SyncOnceCell<Mutex<Vec<Player>>> = SyncOnceCell::new();
-  PlayerList {
-    players: INSTANCE.get_or_init(|| Mutex::new(Vec::new())),
-  }
+#[derive(Debug, Clone)]
+pub struct PlayerList {
+  pub players: Arc<Mutex<Vec<Player>>>,
 }
 
 impl PlayerList {
-    fn new() -> PlayerList {
+    pub fn new() -> PlayerList {
         PlayerList {
-            players: Vec::new(),
+            players: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
-    fn add_player(&mut self, player: Player) {
-        self.players.push(player);
+    pub fn add_player(&mut self, player: Player) {
+        self.players.lock().unwrap().push(player);
     }
 
-    fn remove_player(&mut self, player: Player) {
-        self.players.retain(|p| p.info_public.name != player.info_public.name);
+    pub fn remove_player(&mut self, player: Player) {
+        self.players.lock().unwrap().retain(|p| p.info_public.name != player.info_public.name);
+    }
+
+    pub fn get_players(&self) -> Vec<PublicPlayer> {
+        self.players.lock().unwrap().iter().map(|p| p.info_public.clone()).collect()
+    }
+
+    pub fn has_player_with_name(&self, name: &str) -> bool {
+      self.players.lock().unwrap().iter().any(|p| p.info_public.name == name)
     }
 }
