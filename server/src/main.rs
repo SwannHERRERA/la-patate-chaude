@@ -1,4 +1,3 @@
-use message_handler::MessageHandler;
 use server::{Server, create_listener};
 use shared::config;
 
@@ -12,8 +11,7 @@ fn main() {
   pretty_env_logger::init();
   let listener = create_listener();
   let player_list = player::PlayerList::new();
-  let message_handler = MessageHandler::new(player_list.clone());
-  let mut server = Server::new(listener, message_handler, player_list.clone());
+  let mut server = Server::new(listener, player_list.clone());
   server.listen();
 }
 

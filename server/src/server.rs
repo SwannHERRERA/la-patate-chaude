@@ -3,21 +3,20 @@ use crate::message_handler::MessageHandler;
 use crate::player::PlayerList;
 use std::io::Write;
 use std::net::{SocketAddr, TcpListener};
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
-use log::{info, trace};
+use log::{info, trace, debug};
 use shared::config::{PORT, IP};
 use shared::message::Message;
 
 pub struct Server {
   listener: TcpListener,
-  message_handler: Arc<Mutex<MessageHandler>>,
   players: PlayerList,
 }
 
 impl Server {
-  pub fn new(listener: TcpListener, message_handler: MessageHandler, players: PlayerList) -> Server {
-    Server { listener, message_handler: Arc::new(Mutex::new(message_handler)), players }
+  pub fn new(listener: TcpListener, players: PlayerList) -> Server {
+    Server { listener, players }
   }
 
   pub fn listen(&mut self) {
@@ -28,9 +27,10 @@ impl Server {
 
     for stream in self.listener.incoming() {
       let stream = stream.unwrap();
+      debug!("{:?}", stream);
       let stream_copy = stream.try_clone().unwrap();
-      info!("players={:?}", self.players.get_players());
-      let message_handler = self.message_handler.clone();
+      info!("players {:?}", self.players.get_players());
+      let message_handler = MessageHandler::new(self.players.clone());
       let tx = tx.clone();
       let handle = thread::spawn(move || {
         let mut exchanger = Exchanger::new(message_handler, tx);
@@ -47,9 +47,9 @@ impl Server {
     let players = self.players.players.clone();
     info!("players {:?}", self.players.get_players());
     let broadcast_reciever = thread::spawn(move || loop {
-      let mut players = players.lock().unwrap();
       match rx.recv() {
         Ok(msg) => {
+          let mut players = players.lock().unwrap();
           info!("rx recieve : {:?}", msg);
           for player in players.iter_mut() {
 

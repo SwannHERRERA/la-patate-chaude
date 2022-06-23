@@ -33,7 +33,8 @@ impl MessageHandler {
       Message::SubscribeResult(SubscribeResult::Ok)
     };
     let answer = MessageType::unicast(answer);
-    let player = Player::new(PublicPlayer::new(name), stream.try_clone().unwrap());
+    let stream_id =  stream.peer_addr().unwrap().to_string();
+    let player = Player::new(PublicPlayer::new(name, stream_id), stream.try_clone().unwrap());
     self.players.add_player(player);
     debug!("Answer: {:?}", answer);
     trace!("Players: {:?}", self.players);

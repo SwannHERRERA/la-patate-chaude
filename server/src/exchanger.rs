@@ -1,4 +1,4 @@
-use std::{sync::{Arc, Mutex, mpsc::Sender}, net::{TcpStream, Shutdown}, io::{Read, Write}};
+use std::{sync::{mpsc::Sender}, net::{TcpStream, Shutdown}, io::{Read, Write}};
 
 use log::{trace, warn, info};
 use shared::message::{Message, ResponseType};
@@ -6,13 +6,13 @@ use shared::message::{Message, ResponseType};
 use crate::message_handler::MessageHandler;
 
 pub struct Exchanger {
-  message_handler: Arc<Mutex<MessageHandler>>,
+  message_handler: MessageHandler,
   tx: Sender<Message>,
 }
 
 impl Exchanger {
 
-  pub fn new(message_handler: Arc<Mutex<MessageHandler>>, tx: Sender<Message>) -> Exchanger {
+  pub fn new(message_handler: MessageHandler, tx: Sender<Message>) -> Exchanger {
     Exchanger { message_handler, tx }
   }
 
@@ -20,9 +20,7 @@ impl Exchanger {
     info!("peer address={:?}", stream.peer_addr());
     loop  {
       let parsed_message = self.parse_message_from_tcp_stream(&stream);
-      let mut message_handler = self.message_handler.lock().unwrap();
-      let response = message_handler.handle_message(parsed_message, &stream);
-      drop(message_handler);
+      let response = self.message_handler.handle_message(parsed_message, &stream);
       if matches!(response.message, Message::EndOfCommunication) {
         break;
       }
