@@ -1,6 +1,26 @@
-use std::collections::VecDeque;
+use crate::challenge::Challenge;
+use crate::message::{RecoverSecret, RecoverSecretInput, RecoverSecretOutput};
 
-use crate::message::{RecoverSecretInput, RecoverSecretOutput};
+impl Challenge for RecoverSecret {
+    type Input = RecoverSecretInput;
+    type Output = RecoverSecretOutput;
+
+    fn name() -> String {
+        "MD5HashCash".to_string()
+    }
+
+    fn new(input: Self::Input) -> Self {
+        RecoverSecret(input)
+    }
+
+    fn solve(&self) -> Self::Output {
+        solve_secret_sentence_challenge(&self.0)
+    }
+
+    fn verify(&self, _: Self::Output) -> bool {
+        todo!()
+    }
+}
 
 pub fn solve_secret_sentence_challenge(input: &RecoverSecretInput) -> RecoverSecretOutput {
     let mut tuples = retrieve_tuples_from_letters(&input);
@@ -58,6 +78,43 @@ fn retrieve_possible_strings_from_tuples(
     retrieve_possible_strings_from_tuples(tuples, propositions);
 }
 
-fn retrieve_possible_strings_from_tuple(tuple: Vec<char>, propositions: &mut Vec<String>) -> Vec<String> {
-    Vec::new()
+fn retrieve_possible_strings_from_tuple(
+    tuple: Vec<char>,
+    propositions: &Vec<String>,
+) -> Vec<String> {
+    let mut other_propositions: Vec<String> = Vec::new();
+
+    propositions.iter().for_each(|proposition| {
+        let new_propositions = retrieve_possible_strings_from_string(&tuple, proposition);
+        new_propositions.iter().for_each(|new_proposition| {
+            if !other_propositions.contains(new_proposition) {
+                other_propositions.push(new_proposition.clone());
+            }
+        });
+    });
+    other_propositions
+}
+
+fn retrieve_possible_strings_from_string(tuple: &Vec<char>, proposition: &String) -> Vec<String> {
+    todo!()
+}
+
+fn get_string_before(string: &String, character: char) -> String {
+    let mut new_string = String::new();
+    for c in string.chars() {
+        if c == character {
+            break;
+        }
+        new_string.push(c);
+    }
+    new_string
+}
+
+fn get_string_after(string: &String, character: char) -> String {
+    let mut new_string = String::new();
+    let index = string.chars().position(|c| c == character).unwrap();
+    for c in string.chars().skip(index + 1) {
+        new_string.push(c);
+    }
+    new_string
 }

@@ -42,4 +42,4 @@ Les données d'entrée présentent une forme de compression parfois appelé CSR 
 * Les lettres sont encodées en UTF-8
 * L'augmentation de complexité portera sur la répétition de lettres (multiples occurrences) et la longueur de la phrase. 
 
-
+![img.png](img.png)

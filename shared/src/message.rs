@@ -19,6 +19,7 @@ pub struct PublicPlayer {
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeAnswer {
     MD5HashCash(MD5HashCashOutput),
+    RecoverSecret(RecoverSecretOutput),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -35,6 +36,14 @@ pub struct ReportedChallengeResult {
     pub value: ChallengeValue,
 }
 
+pub type PublicLeaderBoard = Vec<PublicPlayer>;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum SubscribeResult {
+    Ok,
+    Err(SubscribeError),
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RecoverSecretInput {
     pub letters: String,
@@ -44,14 +53,6 @@ pub struct RecoverSecretInput {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RecoverSecretOutput {
     pub secret_sentence: String,
-}
-
-pub type PublicLeaderBoard = Vec<PublicPlayer>;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum SubscribeResult {
-    Ok,
-    Err(SubscribeError),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -67,11 +68,15 @@ pub struct MD5HashCashInput {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct RecoverSecret(pub(crate) RecoverSecretInput);
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MD5HashCash(pub(crate) MD5HashCashInput);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeType {
     MD5HashCash(MD5HashCash),
+    RecoverSecret(RecoverSecret),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -119,7 +124,9 @@ mod tests {
 
     #[test]
     fn test_subscribe_serialization() {
-        let message = Message::Subscribe { name: "test".to_string() };
+        let message = Message::Subscribe {
+            name: "test".to_string(),
+        };
         let serialized = serde_json::to_string(&message).unwrap();
         assert_eq!(serialized, "{\"Subscribe\":{\"name\":\"test\"}}");
     }
@@ -135,6 +142,9 @@ mod tests {
     fn test_subscribe_result_failure_serialization() {
         let message = Message::SubscribeResult(SubscribeResult::Err(SubscribeError::InvalidName));
         let serialized = serde_json::to_string(&message).unwrap();
-        assert_eq!(serialized, "{\"SubscribeResult\":{\"Err\":\"InvalidName\"}}");
+        assert_eq!(
+            serialized,
+            "{\"SubscribeResult\":{\"Err\":\"InvalidName\"}}"
+        );
     }
 }

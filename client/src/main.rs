@@ -1,33 +1,42 @@
-use std::{io::{Read, Write}, net::TcpStream, thread};
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::thread::JoinHandle;
+use std::{
+    io::{Read, Write},
+    net::TcpStream,
+    thread,
+};
 
 use rand;
 use rand::Rng;
 
 use shared::challenge::Challenge;
 use shared::config::{IP, PORT};
-use shared::message::{ChallengeAnswer, ChallengeType, Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
+use shared::message::{ChallengeAnswer, ChallengeType, Message, PublicLeaderBoard};
 
 fn main() {
-    let ip_as_string = IP.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(".");
+    let ip_as_string = IP
+        .iter()
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>()
+        .join(".");
     let address = format!("{}:{}", ip_as_string, PORT);
     match TcpStream::connect(address) {
         Ok(stream) => {
             let client = Client::new();
             client.start_threads(stream);
-        },
+        }
         Err(_) => panic!("Could not connect to server {:?} on port {}", IP, PORT),
     }
 }
 
 fn solve_challenge(challenge: ChallengeType) -> ChallengeAnswer {
     match challenge {
-        ChallengeType::MD5HashCash(challenge) => {
-            ChallengeAnswer::MD5HashCash(challenge.solve())
+        ChallengeType::MD5HashCash(challenge) => ChallengeAnswer::MD5HashCash(challenge.solve()),
+        ChallengeType::RecoverSecret(challenge) => {
+            ChallengeAnswer::RecoverSecret(challenge.solve())
         }
     }
 }
@@ -51,13 +60,17 @@ impl Client {
         self.start_message_listener(stream_cpy, writer_tx.clone());
     }
 
-    fn start_message_listener(self, mut stream: TcpStream, writer_tx: Sender<Message>) -> JoinHandle<()> {
+    fn start_message_listener(
+        self,
+        mut stream: TcpStream,
+        writer_tx: Sender<Message>,
+    ) -> JoinHandle<()> {
         loop {
             let mut buf_size = [0; 4];
             stream.read(&mut buf_size);
             let res_size = u32::from_be_bytes(buf_size);
             if res_size == 0 {
-                continue
+                continue;
             }
 
             let mut buf = vec![0; res_size as usize];
@@ -77,12 +90,19 @@ impl Client {
             Message::Welcome { .. } => {
                 let mut rng = rand::thread_rng();
                 let n1: u8 = rng.gen();
-                let answer = Message::Subscribe { name: "test".to_string() + &*n1.to_string() };
+                let answer = Message::Subscribe {
+                    name: "test".to_string() + &*n1.to_string(),
+                };
                 writer_tx.send(answer).unwrap();
             }
             Message::Challenge(challenge) => {
                 let challenge_answer = solve_challenge(challenge);
-                writer_tx.send(ChallengeResult { answer: challenge_answer, next_target: "".to_string() }).unwrap();
+                writer_tx
+                    .send(ChallengeResult {
+                        answer: challenge_answer,
+                        next_target: "".to_string(),
+                    })
+                    .unwrap();
             }
             _ => {}
         }
