@@ -7,9 +7,6 @@ pub enum SubscribeError {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ChallengeOutput;
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct PublicPlayer {
     pub name: String,
     pub stream_id: String,
@@ -21,12 +18,7 @@ pub struct PublicPlayer {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ChallengeAnswer {
-    ChallengeName(ChallengeOutput),
-}
-
-pub struct ChallengeResult {
-    pub name: ChallengeAnswer,
-    pub next_target: String,
+    MD5HashCash(MD5HashCashOutput),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -43,18 +35,32 @@ pub struct ReportedChallengeResult {
     pub value: ChallengeValue,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct MD5HashCash {
-    complexity: u8,
-    message: String,
-}
-
 pub type PublicLeaderBoard = Vec<PublicPlayer>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SubscribeResult {
     Ok,
-    Err (SubscribeError),
+    Err(SubscribeError),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MD5HashCashOutput {
+    pub seed: u64,
+    pub hashcode: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MD5HashCashInput {
+    pub(crate) complexity: u32,
+    pub(crate) message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MD5HashCash(pub(crate) MD5HashCashInput);
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ChallengeType {
+    MD5HashCash(MD5HashCash),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -64,21 +70,18 @@ pub enum Message {
     Subscribe { name: String },
     SubscribeResult(SubscribeResult),
     PublicLeaderBoard(PublicLeaderBoard),
-    Challenge {
-        #[serde(rename = "MD5HashCash")]
-        md5_hash_cash: MD5HashCash,
-    },
+    Challenge(ChallengeType),
     ChallengeResult {
         answer: ChallengeAnswer,
         next_target: String,
     },
     RoundSummary {
-    challenge: String,
-    chain: Vec<ReportedChallengeResult>,
-  },
-  EndOfGame {
-    leader_board: Vec<PublicPlayer>,
-  },
+        challenge: String,
+        chain: Vec<ReportedChallengeResult>,
+    },
+    EndOfGame {
+        leader_board: Vec<PublicPlayer>,
+    },
 }
 
 
@@ -87,37 +90,37 @@ mod tests {
     use super::*;
 
     #[test]
-  fn test_message_hello_serialization() {
-    let message = Message::Hello;
-    let serialized = serde_json::to_string(&message).unwrap();
-    assert_eq!(serialized, "\"Hello\"");
-  }
+    fn test_message_hello_serialization() {
+        let message = Message::Hello;
+        let serialized = serde_json::to_string(&message).unwrap();
+        assert_eq!(serialized, "\"Hello\"");
+    }
 
-  #[test]
-  fn test_welcome_serialization() {
-    let message = Message::Welcome { version: 1 };
-    let serialized = serde_json::to_string(&message).unwrap();
-    assert_eq!(serialized, "{\"Welcome\":{\"version\":1}}");
-  }
+    #[test]
+    fn test_welcome_serialization() {
+        let message = Message::Welcome { version: 1 };
+        let serialized = serde_json::to_string(&message).unwrap();
+        assert_eq!(serialized, "{\"Welcome\":{\"version\":1}}");
+    }
 
-  #[test]
-  fn test_subscribe_serialization() {
-    let message = Message::Subscribe { name: "test".to_string() };
-    let serialized = serde_json::to_string(&message).unwrap();
-    assert_eq!(serialized, "{\"Subscribe\":{\"name\":\"test\"}}");
-  }
+    #[test]
+    fn test_subscribe_serialization() {
+        let message = Message::Subscribe { name: "test".to_string() };
+        let serialized = serde_json::to_string(&message).unwrap();
+        assert_eq!(serialized, "{\"Subscribe\":{\"name\":\"test\"}}");
+    }
 
-  #[test]
-  fn test_subscribe_result_success_serialization() {
-    let message = Message::SubscribeResult(SubscribeResult::Ok);
-    let serialized = serde_json::to_string(&message).unwrap();
-    assert_eq!(serialized, "{\"SubscribeResult\":\"Ok\"}");
-  }
+    #[test]
+    fn test_subscribe_result_success_serialization() {
+        let message = Message::SubscribeResult(SubscribeResult::Ok);
+        let serialized = serde_json::to_string(&message).unwrap();
+        assert_eq!(serialized, "{\"SubscribeResult\":\"Ok\"}");
+    }
 
-  #[test]
-  fn test_subscribe_result_failure_serialization() {
-    let message = Message::SubscribeResult(SubscribeResult::Err(SubscribeError::InvalidName));
-    let serialized = serde_json::to_string(&message).unwrap();
-    assert_eq!(serialized, "{\"SubscribeResult\":{\"Err\":\"InvalidName\"}}");
-  }
+    #[test]
+    fn test_subscribe_result_failure_serialization() {
+        let message = Message::SubscribeResult(SubscribeResult::Err(SubscribeError::InvalidName));
+        let serialized = serde_json::to_string(&message).unwrap();
+        assert_eq!(serialized, "{\"SubscribeResult\":{\"Err\":\"InvalidName\"}}");
+    }
 }

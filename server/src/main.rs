@@ -1,5 +1,5 @@
 use message_handler::MessageHandler;
-use server::{Server, create_listener};
+use server::{create_listener, Server};
 use shared::config::{self};
 
 mod message_handler;
@@ -13,4 +13,3 @@ fn main() {
   let mut server = Server::new(listener, message_handler);
   server.listen();
 }
-
