@@ -73,11 +73,11 @@ impl Server {
 }
 
 pub fn create_listener() -> TcpListener {
-  let addr = SocketAddr::from((IP, PORT));
-  let listener = TcpListener::bind(addr);
-  info!("Start Listening on : {}", addr);
-  match listener {
-    Ok(l) => l,
-    Err(err) => panic!("Cannot listen on port : {err:?}")
-  }
+    let addr = SocketAddr::from((IP, PORT));
+    let listener = TcpListener::bind(addr);
+    info!("Start Listening on : {}", addr);
+    match listener {
+        Ok(l) => l,
+        Err(err) => panic!("Cannot listen on port : {err:?}")
+    }
 }
