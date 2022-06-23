@@ -1,4 +1,5 @@
 use std::{io::{Read, Write}, net::TcpStream, thread};
+use std::net::SocketAddr;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
@@ -13,8 +14,7 @@ use shared::message::{ChallengeAnswer, ChallengeType, Message, PublicLeaderBoard
 use shared::message::Message::ChallengeResult;
 
 fn main() {
-    let ip_as_string = IP.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(".");
-    let address = format!("{}:{}", ip_as_string, PORT);
+    let address = SocketAddr::from((IP, PORT));
     match TcpStream::connect(address) {
         Ok(stream) => {
             let client = Client::new();
@@ -44,14 +44,14 @@ impl Client {
     }
 
     fn start_threads(self, stream: TcpStream) {
-        let (writer_tx, writer_rx) = mpsc::channel();
+        let (thread_writer, thread_reader) = mpsc::channel();
         let stream_cpy = stream.try_clone().unwrap();
-        self.start_message_sender(stream, writer_rx);
-        writer_tx.send(Message::Hello).unwrap();
-        self.start_message_listener(stream_cpy, writer_tx.clone());
+        self.start_message_sender(stream, thread_reader);
+        thread_writer.send(Message::Hello).unwrap();
+        self.start_message_listener(stream_cpy, thread_writer.clone());
     }
 
-    fn start_message_listener(self, mut stream: TcpStream, writer_tx: Sender<Message>) -> JoinHandle<()> {
+    fn start_message_listener(self, mut stream: TcpStream, thread_writer: Sender<Message>) -> JoinHandle<()> {
         loop {
             let mut buf_size = [0; 4];
             stream.read(&mut buf_size);
@@ -65,32 +65,32 @@ impl Client {
             let string_receive = String::from_utf8_lossy(&buf);
 
             match serde_json::from_str(&string_receive) {
-                Ok(message) => self.dispatch_messages(message, &writer_tx),
+                Ok(message) => self.dispatch_messages(message, &thread_writer),
                 Err(_) => println!("Error while parsing message"),
             }
         }
     }
 
-    fn dispatch_messages(&self, message: Message, writer_tx: &Sender<Message>) {
+    fn dispatch_messages(&self, message: Message, thread_writer: &Sender<Message>) {
         println!("Dispatching: {:?}", message);
         match message {
             Message::Welcome { .. } => {
                 let mut rng = rand::thread_rng();
                 let n1: u8 = rng.gen();
                 let answer = Message::Subscribe { name: "test".to_string() + &*n1.to_string() };
-                writer_tx.send(answer).unwrap();
+                thread_writer.send(answer).unwrap();
             }
             Message::Challenge(challenge) => {
                 let challenge_answer = solve_challenge(challenge);
-                writer_tx.send(ChallengeResult { answer: challenge_answer, next_target: "".to_string() }).unwrap();
+                thread_writer.send(ChallengeResult { answer: challenge_answer, next_target: "".to_string() }).unwrap();
             }
             _ => {}
         }
     }
 
-    fn start_message_sender(&self, mut stream: TcpStream, writer_rx: Receiver<Message>) {
+    fn start_message_sender(&self, mut stream: TcpStream, thread_reader: Receiver<Message>) {
         thread::spawn(move || {
-            for message in writer_rx {
+            for message in thread_reader {
                 if let Ok(message) = serde_json::to_string(&message) {
                     println!("Writing {:?}", message);
                     let bytes_message = message.as_bytes();
