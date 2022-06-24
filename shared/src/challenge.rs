@@ -1,7 +1,6 @@
 use std::sync::{Arc, mpsc};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
-use std::time::Instant;
 
 use crate::config::NTHREADS;
 use crate::message::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput};
@@ -34,7 +33,6 @@ impl Challenge for MD5HashCash {
     }
 
     fn solve(&self) -> Self::Output {
-        let now = Instant::now();
         let seed_counter = Arc::new(AtomicU64::new(0));
         let is_solved = Arc::new(AtomicBool::new(false));
         let (worker_tx, worker_rx) = mpsc::channel();
@@ -60,12 +58,7 @@ impl Challenge for MD5HashCash {
                 }
             });
         }
-        let elapsed = now.elapsed();
-        println!("Thread creation time elapsed 1: {:.2?}", elapsed);
-        let out = worker_rx.recv().unwrap();
-        let elapsed = now.elapsed();
-        println!("Challenge solve time elapsed 2: {:.2?}", elapsed);
-        out
+        worker_rx.recv().unwrap()
     }
 
     fn verify(&self, _: Self::Output) -> bool {
