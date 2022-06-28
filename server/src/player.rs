@@ -11,7 +11,7 @@ impl Player {
   pub fn new(info_public: PublicPlayer, tcp_stream: TcpStream) -> Player {
     Player {
       info_public,
-      tcp_stream: tcp_stream,
+      tcp_stream,
     }
   }
 }

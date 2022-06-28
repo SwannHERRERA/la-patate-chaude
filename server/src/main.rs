@@ -1,6 +1,5 @@
-use message_handler::MessageHandler;
 use server::{create_listener, Server};
-use shared::config::{self};
+use shared::config;
 
 mod player;
 mod message_handler;

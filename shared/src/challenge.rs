@@ -3,8 +3,10 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
 use std::time::Instant;
 
+use hashcash::{MD5HashCashOutput, MD5HashCashInput, MD5HashCash};
+use serde::{Deserialize, Serialize};
+
 use crate::config::NTHREADS;
-use crate::message::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput};
 
 pub trait Challenge {
     /// Données en entrée du challenge
@@ -84,4 +86,28 @@ fn check_hash(mut complexity: u32, hash: String) -> bool {
         complexity -= 1;
     }
     complexity == 0
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum ChallengeAnswer {
+    MD5HashCash(MD5HashCashOutput),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum ChallengeValue {
+    Unreachable,
+    Timeout,
+    BadResult { used_time: f64, next_target: String },
+    Ok { used_time: f64, next_target: String },
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ReportedChallengeResult {
+    pub name: String,
+    pub value: ChallengeValue,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum ChallengeType {
+    MD5HashCash(MD5HashCash),
 }

@@ -8,9 +8,9 @@ use std::thread::JoinHandle;
 use rand;
 use rand::Rng;
 
-use shared::challenge::Challenge;
+use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType};
 use shared::config::{IP, PORT};
-use shared::message::{ChallengeAnswer, ChallengeType, Message, PublicLeaderBoard};
+use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
 
 fn main() {
