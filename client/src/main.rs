@@ -13,10 +13,10 @@ use std::{
 use rand;
 use rand::Rng;
 
-use shared::challenge::Challenge;
+use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType};
 use shared::config::{IP, PORT};
+use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
-use shared::message::{ChallengeAnswer, ChallengeType, Message, PublicLeaderBoard};
 
 fn main() {
     let address = SocketAddr::from((IP, PORT));
