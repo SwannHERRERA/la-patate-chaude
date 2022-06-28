@@ -192,6 +192,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "recover_secret"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "regex"
 version = "1.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -265,6 +272,7 @@ dependencies = [
  "hashcash",
  "md5",
  "rand",
+ "recover_secret",
  "serde",
  "serde_json",
 ]

@@ -3,8 +3,11 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
 use std::time::Instant;
 
-use hashcash::{MD5HashCashOutput, MD5HashCashInput, MD5HashCash};
 use serde::{Deserialize, Serialize};
+
+use hashcash::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput};
+use recover_secret::challenge_resolve::solve_secret_sentence_challenge;
+use recover_secret::models::{RecoverSecret, RecoverSecretInput, RecoverSecretOutput};
 
 use crate::config::NTHREADS;
 
@@ -75,6 +78,27 @@ impl Challenge for MD5HashCash {
     }
 }
 
+impl Challenge for RecoverSecret {
+    type Input = RecoverSecretInput;
+    type Output = RecoverSecretOutput;
+
+    fn name() -> String {
+        "MD5HashCash".to_string()
+    }
+
+    fn new(input: Self::Input) -> Self {
+        RecoverSecret(input)
+    }
+
+    fn solve(&self) -> Self::Output {
+        solve_secret_sentence_challenge(&self.0)
+    }
+
+    fn verify(&self, _: Self::Output) -> bool {
+        todo!()
+    }
+}
+
 fn check_hash(mut complexity: u32, hash: String) -> bool {
     let bit_compare = 1 << 127;
     let mut sum = u128::from_str_radix(&*hash, 16).unwrap();
@@ -91,6 +115,7 @@ fn check_hash(mut complexity: u32, hash: String) -> bool {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ChallengeAnswer {
     MD5HashCash(MD5HashCashOutput),
+    RecoverSecret(RecoverSecretOutput),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -110,4 +135,5 @@ pub struct ReportedChallengeResult {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ChallengeType {
     MD5HashCash(MD5HashCash),
+    RecoverSecret(RecoverSecret),
 }

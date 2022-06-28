@@ -4,11 +4,6 @@ use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::thread::JoinHandle;
-use std::{
-    io::{Read, Write},
-    net::TcpStream,
-    thread,
-};
 
 use rand;
 use rand::Rng;
