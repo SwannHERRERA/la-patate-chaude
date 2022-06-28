@@ -1,5 +1,6 @@
 extern crate rand;
 
+use random_string::generate;
 use rand::thread_rng;
 use rand::Rng;
 use serde::{Serialize, Deserialize};
@@ -23,9 +24,11 @@ impl MD5HashCashInput {
     pub fn new() -> MD5HashCashInput {
         let mut rng = thread_rng();
         let complexity: u32 = rng.gen_range(5..24);
+        let charset: &'static str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let message: String = generate(16, charset);
         MD5HashCashInput {
             complexity,
-            message: "".to_string(),
+            message,
         }
     }
 }
