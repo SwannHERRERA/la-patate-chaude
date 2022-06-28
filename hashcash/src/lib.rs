@@ -1,3 +1,7 @@
+extern crate rand;
+
+use rand::thread_rng;
+use rand::Rng;
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -14,3 +18,14 @@ pub struct MD5HashCashInput {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MD5HashCash(pub MD5HashCashInput);
+
+impl MD5HashCashInput {
+    pub fn new() -> MD5HashCashInput {
+        let mut rng = thread_rng();
+        let complexity: u32 = rng.gen_range(5..24);
+        MD5HashCashInput {
+            complexity,
+            message: "".to_string(),
+        }
+    }
+}
