@@ -14,13 +14,3 @@ pub struct MD5HashCashInput {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MD5HashCash(pub MD5HashCashInput);
-
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
