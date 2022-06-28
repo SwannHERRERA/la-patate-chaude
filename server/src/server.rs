@@ -3,20 +3,22 @@ use crate::message_handler::MessageHandler;
 use crate::player::PlayerList;
 use std::io::Write;
 use std::net::{SocketAddr, TcpListener};
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use log::{info, trace, debug};
+use shared::challenge::ChallengeType;
 use shared::config::{PORT, IP};
 use shared::message::Message;
 
 pub struct Server {
   listener: TcpListener,
   players: PlayerList,
+  pub current_challenge: Arc<Mutex<Option<ChallengeType>>>,
 }
 
 impl Server {
   pub fn new(listener: TcpListener, players: PlayerList) -> Server {
-    Server { listener, players }
+    Server { listener, players, current_challenge: Arc::new(Mutex::new(None)) }
   }
 
   pub fn listen(&mut self) {
@@ -30,7 +32,7 @@ impl Server {
       debug!("{:?}", stream);
       let stream_copy = stream.try_clone().unwrap();
       info!("players {:?}", self.players.get_players());
-      let message_handler = MessageHandler::new(self.players.clone());
+      let message_handler = MessageHandler::new(self.players.clone(), self.current_challenge.clone());
       let tx = tx.clone();
       let handle = thread::spawn(move || {
         let mut exchanger = Exchanger::new(message_handler, tx);

@@ -70,7 +70,7 @@ impl Challenge for MD5HashCash {
         out
     }
 
-    fn verify(&self, _: Self::Output) -> bool {
+    fn verify(&self, output: Self::Output) -> bool {
         todo!()
     }
 }

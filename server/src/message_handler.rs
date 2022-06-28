@@ -1,5 +1,7 @@
 use std::net::TcpStream;
-use log::{info, debug, trace};
+use std::sync::{Arc, Mutex};
+use log::{info, debug, trace, error};
+use shared::challenge::ChallengeType;
 use shared::message::{Message, MessageType};
 use shared::public_player::PublicPlayer;
 use shared::subscribe::{SubscribeResult, SubscribeError};
@@ -8,19 +10,25 @@ use crate::player::{PlayerList, Player};
 #[derive(Debug)]
 pub struct MessageHandler {
   players: PlayerList,
+  challenge: Arc<Mutex<Option<ChallengeType>>>
 }
 
 impl MessageHandler {
-  pub fn new(players: PlayerList) -> MessageHandler {
-    MessageHandler { players }
+  pub fn new(players: PlayerList, challenge: Arc<Mutex<Option<ChallengeType>>>) -> MessageHandler {
+    MessageHandler { players, challenge }
   }
 
-  pub fn handle_message(&mut self, message: Message, stream: &TcpStream) -> MessageType {
+  pub fn get_challenge(&self) -> Option<ChallengeType> {
+    self.challenge.lock().unwrap().clone()
+  }
+
+  pub fn handle_message(&mut self, message: Message, stream: &TcpStream, current_challenge: Option<ChallengeType>) -> MessageType {
       info!("Incomming Message: {:?}", message);
       match message {
         Message::Hello => self.handle_hello(),
         Message::Subscribe { name } => self.handle_subscribtion(name, stream),
         Message::StartGame {  } => self.handle_start_game(),
+        Message::ChallengeResult { answer, next_target } => self.handle_challenge_result(current_challenge),
         Message::EndOfCommunication =>self.handle_end_of_communication(stream),
         _ => panic!("Not implemented")
       }
@@ -60,6 +68,18 @@ impl MessageHandler {
     info!("stream id: {:?}", stream.peer_addr());
     debug!("Answer: {:?}", answer);
     answer
+  }
+
+  fn handle_challenge_result(&self, challenge: Option<ChallengeType>) -> MessageType {
+    match challenge {
+      Some(challenge) => {
+       todo!("handle challenge result");
+      }
+      None => {
+        error!("No challenge to answer");
+        panic!("No challenge to answer, current_challenge is None");
+      }
+    }
   }
 }
 

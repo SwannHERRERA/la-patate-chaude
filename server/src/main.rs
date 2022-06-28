@@ -11,6 +11,6 @@ fn main() {
   pretty_env_logger::init();
   let listener = create_listener();
   let player_list = player::PlayerList::new();
-  let mut server = Server::new(listener, player_list.clone());
+  let mut server: Server = Server::new(listener, player_list.clone());
   server.listen();
 }

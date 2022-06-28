@@ -21,7 +21,7 @@ impl Exchanger {
     info!("peer address={:?}", stream.peer_addr());
     loop  {
       let parsed_message = self.parse_message_from_tcp_stream(&stream);
-      let response = self.message_handler.handle_message(parsed_message, &stream);
+      let response = self.message_handler.handle_message(parsed_message, &stream, self.message_handler.get_challenge());
       if matches!(response.message, Message::EndOfCommunication) {
         break;
       }
@@ -75,7 +75,9 @@ impl Exchanger {
   }
 
   fn start_round(&self) -> MessageType {
-    let message = Message::Challenge(ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new())));
+    let challenge = ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()));
+
+    let message = Message::Challenge(challenge);
     MessageType::boardcast(message)
   }
 }
