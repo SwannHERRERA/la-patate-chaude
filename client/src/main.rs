@@ -1,3 +1,5 @@
+mod strategies;
+
 use std::{io::{Read, Write}, net::TcpStream, thread};
 use std::net::SocketAddr;
 use std::sync::mpsc;
