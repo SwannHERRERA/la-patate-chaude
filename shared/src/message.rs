@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub enum SubscribeError {
-    AlreadyRegistered,
-    InvalidName,
-}
+use crate::{
+    public_player::PublicPlayer,
+    challenge::{MD5HashCash, ChallengeAnswer, ReportedChallengeResult},
+    subscribe::SubscribeResult
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PublicPlayer {
@@ -99,13 +99,39 @@ pub enum Message {
         challenge: String,
         chain: Vec<ReportedChallengeResult>,
     },
+  StartGame {},
     EndOfGame {
         leader_board: Vec<PublicPlayer>,
     },
+  EndOfCommunication,
+}
+
+#[derive(Debug, Clone)]
+pub enum ResponseType {
+  Broadcast,
+  Unicast,
+}
+
+#[derive(Debug, Clone)]
+pub struct MessageType {
+    pub message: Message,
+    pub message_type: ResponseType,
+}
+
+impl MessageType {
+    pub fn boardcast(message: Message) -> MessageType {
+        MessageType { message, message_type: ResponseType::Broadcast }
+    }
+    pub fn unicast(message: Message) -> MessageType {
+        MessageType { message, message_type: ResponseType::Unicast }
+    }
+    
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::subscribe::SubscribeError;
+
     use super::*;
 
     #[test]
