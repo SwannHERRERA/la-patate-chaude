@@ -2,11 +2,10 @@ use std::sync::{Arc, mpsc};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
 
-use hashcash::{MD5HashCashOutput, MD5HashCashInput, MD5HashCash};
 use serde::{Deserialize, Serialize};
+use hashcash::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput};
 
 use crate::config::NTHREADS;
-use crate::message::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput};
 
 pub trait Challenge {
     /// Données en entrée du challenge

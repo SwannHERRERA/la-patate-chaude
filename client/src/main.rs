@@ -9,11 +9,12 @@ use log::{debug, error, trace, warn};
 use rand;
 use rand::Rng;
 
-use shared::challenge::Challenge;
+use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType};
 use shared::config;
 use shared::config::{IP, PORT};
-use shared::message::{ChallengeAnswer, ChallengeType, Message, PublicLeaderBoard, SubscribeResult};
+use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
+use shared::subscribe::SubscribeResult;
 
 fn main() {
     std::env::set_var("RUST_LOG", config::LOG_LEVEL);
