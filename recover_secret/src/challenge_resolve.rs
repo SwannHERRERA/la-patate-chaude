@@ -1,17 +1,14 @@
 use crate::models::{RecoverSecretInput, RecoverSecretOutput};
 use crate::string_utils::{
-    add_char_at_index, get_string_after_first_occurrence, get_string_after_last_occurrence,
-    get_string_before_first_occurrence, get_string_before_last_occurrence, is_present,
+    add_char_at_index, count_spaces_in_string, get_string_after_first_occurrence,
+    get_string_after_last_occurrence, get_string_before_first_occurrence,
+    get_string_before_last_occurrence, is_present, word_count,
 };
 
 pub fn solve_secret_sentence_challenge(input: &RecoverSecretInput) -> RecoverSecretOutput {
     let mut tuples = retrieve_tuples_from_letters(&input);
     let secret_sentence = retrieve_secret_sequence_from_tuples(&mut tuples, &input.word_count);
     RecoverSecretOutput { secret_sentence }
-}
-
-fn count_spaces_in_string(string: &String) -> usize {
-    string.chars().filter(|&c| c == ' ').count()
 }
 
 fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
@@ -31,40 +28,27 @@ fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
 fn retrieve_secret_sequence_from_tuples(tuples: &mut Vec<Vec<char>>, nb_words: &usize) -> String {
     let mut propositions: Vec<String> = Vec::new();
     retrieve_possible_strings_from_tuples(tuples, &mut propositions, nb_words);
-    let possibles_sentences =
-        retrieve_possible_secret_sentences_from_possible_strings(&propositions, nb_words);
-    if possibles_sentences.len() > 0 {
-        return possibles_sentences[0].clone();
+
+    display_possibilities(&propositions);
+
+    if propositions.len() > 0 {
+        // TODO retrieve from dictionnary here
+        return propositions[0].clone();
     } else {
         panic!("No solution found.");
     }
 }
 
-fn retrieve_possible_secret_sentences_from_possible_strings(
-    propositions: &Vec<String>,
-    nb_words: &usize,
-) -> Vec<String> {
+fn display_possibilities(propositions: &Vec<String>) {
     if propositions.len() > 0 {
-        let filtered_propositions: Vec<String> = propositions
-            .iter()
-            .filter(|word| count_spaces_in_string(*word) == (*nb_words) - 1)
-            .map(|string| string.clone())
-            .collect();
-
-        /*        println!("===================================================");
-                for i in 0..filtered_propositions.len() {
-                    println!("{:?}", filtered_propositions[i])
-                }
-                println!("===================================================");
-                println!(
-                    "{} possibilities, {} filtered possibilities...",
-                    propositions.len(),
-                    filtered_propositions.len()
-                );
-        */
-        return filtered_propositions;
+        println!("===================================================");
+        for i in 0..propositions.len() {
+            println!("{:?}", propositions[i])
+        }
+        println!("===================================================");
+        println!("{} possibilities ...", propositions.len(),);
     } else {
-        panic!("No solution found.");
+        println!("No solution found.");
     }
 }
 
@@ -146,6 +130,7 @@ fn retrieve_possible_strings_from_string(
                                     &next_char,
                                     &proposition,
                                     &new_proposition,
+                                    &nb_words,
                                 );
                             } else {
                                 for i in 0..new_proposition.len() + 1 {
@@ -156,6 +141,7 @@ fn retrieve_possible_strings_from_string(
                                         &next_char,
                                         &proposition,
                                         &final_proposition,
+                                        &nb_words,
                                     );
                                 }
                             }
@@ -165,6 +151,7 @@ fn retrieve_possible_strings_from_string(
                                 &next_char,
                                 &proposition,
                                 &new_proposition,
+                                &nb_words,
                             );
                         }
                     });
@@ -214,6 +201,7 @@ fn retrieve_possible_strings_from_string(
                                 previous_char,
                                 proposition,
                                 &new_proposition,
+                                &nb_words,
                             );
                         } else {
                             for i in 0..new_proposition.len() + 1 {
@@ -224,6 +212,7 @@ fn retrieve_possible_strings_from_string(
                                     previous_char,
                                     proposition,
                                     &final_proposition,
+                                    &nb_words,
                                 );
                             }
                         }
@@ -234,6 +223,7 @@ fn retrieve_possible_strings_from_string(
                             previous_char,
                             proposition,
                             &new_proposition,
+                            &nb_words,
                         );
                     }
                 });
@@ -266,6 +256,7 @@ fn retrieve_possible_strings_from_string(
                                 next_char,
                                 proposition,
                                 &new_proposition,
+                                &nb_words,
                             );
                         } else {
                             for i in 0..new_proposition.len() + 1 {
@@ -277,6 +268,7 @@ fn retrieve_possible_strings_from_string(
                                     next_char,
                                     proposition,
                                     &final_proposition,
+                                    &nb_words,
                                 );
                             }
                         }
@@ -287,6 +279,7 @@ fn retrieve_possible_strings_from_string(
                             next_char,
                             proposition,
                             &new_proposition,
+                            &nb_words,
                         );
                     }
                 })
@@ -305,6 +298,7 @@ fn push_proposition_with_string_between_chars(
     next_char: &char,
     proposition: &String,
     new_proposition: &String,
+    nb_words: &usize,
 ) {
     let mut final_proposition = new_proposition.clone();
     if is_present(proposition, previous_char) {
@@ -319,7 +313,9 @@ fn push_proposition_with_string_between_chars(
         final_proposition.push_str(&tmp);
     }
     // println!("'{}' -> '{}'", proposition, final_proposition);
-    new_propositions.push(final_proposition);
+    if word_count(&final_proposition) <= *nb_words {
+        new_propositions.push(final_proposition);
+    }
 }
 
 fn push_proposition_with_string_before_char(
@@ -327,6 +323,7 @@ fn push_proposition_with_string_before_char(
     previous_char: &char,
     proposition: &String,
     new_proposition: &String,
+    nb_words: &usize,
 ) {
     let mut final_proposition = new_proposition.clone();
     if is_present(proposition, previous_char) {
@@ -336,7 +333,9 @@ fn push_proposition_with_string_before_char(
         final_proposition = tmp;
     }
     // println!("'{}' -> '{}'", proposition, final_proposition);
-    new_propositions.push(final_proposition);
+    if word_count(&final_proposition) <= *nb_words {
+        new_propositions.push(final_proposition);
+    }
 }
 
 fn push_proposition_with_string_after_char(
@@ -344,6 +343,7 @@ fn push_proposition_with_string_after_char(
     next_char: &char,
     proposition: &String,
     new_proposition: &String,
+    nb_words: &usize,
 ) {
     let mut final_proposition = new_proposition.clone();
     if is_present(proposition, next_char) {
@@ -351,7 +351,9 @@ fn push_proposition_with_string_after_char(
         final_proposition.push_str(&get_string_after_last_occurrence(proposition, next_char));
     }
     // println!("'{}' -> '{}'", proposition, final_proposition);
-    new_propositions.push(final_proposition);
+    if word_count(&final_proposition) <= *nb_words {
+        new_propositions.push(final_proposition);
+    }
 }
 
 #[cfg(test)]

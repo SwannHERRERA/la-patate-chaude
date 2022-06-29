@@ -102,6 +102,14 @@ pub fn is_present(string: &String, character: &char) -> bool {
     string.chars().any(|c| c == *character)
 }
 
+pub fn count_spaces_in_string(string: &String) -> usize {
+    string.chars().filter(|&c| c == ' ').count()
+}
+
+pub fn word_count(string: &String) -> usize {
+    string.split_whitespace().count()
+}
+
 #[cfg(test)]
 mod tests {
     use crate::string_utils::{
