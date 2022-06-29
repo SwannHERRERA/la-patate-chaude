@@ -1,10 +1,26 @@
-use crate::models::{RecoverSecret, RecoverSecretInput, RecoverSecretOutput};
+use crate::models::{RecoverSecretInput, RecoverSecretOutput};
 
 pub fn solve_secret_sentence_challenge(input: &RecoverSecretInput) -> RecoverSecretOutput {
     let mut tuples = retrieve_tuples_from_letters(&input);
-    let secret_sentence = retrieve_secret_sentence_from_tuples(&mut tuples);
-
+    let secret_sequence = retrieve_secret_sequence_from_tuples(&mut tuples);
+    let secret_sentence = retrieve_secret_sentence_from_secret_sequence(&secret_sequence, &input.word_count);
     RecoverSecretOutput { secret_sentence }
+}
+
+fn retrieve_secret_sentence_from_secret_sequence(sequence: &String, word_count: &usize) -> String {
+    let mut sentence = "".to_string();
+    let mut sequence_index: usize = 0;
+    let mut word_count_left = word_count - 1;
+    while word_count_left > 0 {
+        sentence.push(sequence.chars().nth(sequence_index).unwrap());
+        sentence.push(' ');
+        word_count_left -= 1;
+        sequence_index += 1;
+    }
+    for index in sequence_index..sequence.len() {
+        sentence.push(sequence.chars().nth(index).unwrap());
+    }
+    sentence
 }
 
 fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
@@ -21,13 +37,13 @@ fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
     tuples
 }
 
-fn retrieve_secret_sentence_from_tuples(tuples: &mut Vec<Vec<char>>) -> String {
+fn retrieve_secret_sequence_from_tuples(tuples: &mut Vec<Vec<char>>) -> String {
     let mut propositions: Vec<String> = Vec::new();
     retrieve_possible_strings_from_tuples(tuples, &mut propositions);
-    retrieve_secret_sentence_from_possible_strings(&propositions)
+    retrieve_secret_sequence_from_possible_strings(&propositions)
 }
 
-fn retrieve_secret_sentence_from_possible_strings(propositions: &Vec<String>) -> String {
+fn retrieve_secret_sequence_from_possible_strings(propositions: &Vec<String>) -> String {
     if propositions.len() > 0 {
         propositions[0].clone()
     } else {
@@ -82,41 +98,107 @@ fn retrieve_possible_strings_from_string(tuple: &Vec<char>, old_proposition: &St
     propositions.push(old_proposition.clone());
     let tuple_length = tuple.len();
 
-    tuple.iter().enumerate().for_each(|(index, c)| {
+    tuple.iter().enumerate().for_each(|(index, current_char)| {
         let mut new_propositions: Vec<String> = Vec::new();
         match index {
             0 => {
                 if tuple_length > 1 {
                     // there is at least one element after
-                    propositions.iter().for_each(|proposition| {
-                        if is_present(proposition, c) {
-                            // check if is present before next tuple char
-                            if is_present(proposition, tuple.get(index + 1).unwrap()) {
-                                // get string before, insert, concat...
-                            } else {
-                                let mut new_proposition = proposition.clone();
-                                new_proposition.push(*c);
-                                new_propositions.push(new_proposition);
-                            }
-                        } else {
-                            // not present, insert before next char
-                            let mut new_proposition = get_string_before(proposition, tuple.get(index + 1).unwrap());
-                            new_proposition.push(*c);
-                            new_proposition.push(*tuple.get(index + 1).unwrap());
-                            new_proposition.push_str(&get_string_after(proposition, tuple.get(index + 1).unwrap()));
+                    let next_char = tuple.get(index + 1).unwrap();
 
-                            new_propositions.push(new_proposition);
+                    propositions.iter().for_each(|proposition| {
+                        let mut new_proposition: String;
+                        if !is_present(proposition, next_char) {
+                            new_proposition = proposition.clone();
+                        } else {
+                            new_proposition = get_string_before_last_occurrence(proposition, next_char);
                         }
+
+                        if !is_present(&new_proposition, current_char) {
+                            new_proposition.push(*current_char);
+                        }
+
+                        if is_present(proposition, next_char) {
+                            new_proposition.push(*next_char);
+                            new_proposition.push_str(&get_string_after_last_occurrence(proposition, next_char));
+                        }
+                        // println!("'{}' -> '{}'", proposition, new_proposition);
+                        new_propositions.push(new_proposition);
                     });
                 } else {
                     // single tuple, insert wherever we want if not present
+                    propositions.iter().for_each(|proposition| {
+                        let mut new_proposition = proposition.clone();
+                        if !is_present(&new_proposition, current_char) {
+                            new_proposition.push(*current_char);
+                        }
+                        // println!("'{}' -> '{}'", proposition, new_proposition);
+                        new_propositions.push(new_proposition);
+                    });
                 }
             }
             index_match if index_match == tuple_length - 1 => {
                 // last element, there is at least one element before
+                let previous_char = tuple.get(index - 1).unwrap();
+
+                propositions.iter().for_each(|proposition| {
+                    let mut new_proposition: String;
+
+                    if is_present(proposition, previous_char) {
+                        new_proposition = get_string_after_first_occurrence(proposition, previous_char);
+                    } else {
+                        new_proposition = proposition.clone();
+                    }
+
+                    if !is_present(&new_proposition, current_char) {
+                        new_proposition.push(*current_char);
+                    }
+
+                    if is_present(proposition, previous_char) {
+                        let mut tmp = get_string_before_first_occurrence(proposition, previous_char);
+                        tmp.push(*previous_char);
+                        tmp.push_str(&new_proposition);
+                        new_proposition = tmp;
+                    }
+                    // println!("'{}' -> '{}'", proposition, new_proposition);
+                    new_propositions.push(new_proposition);
+                });
             }
             _ => {
                 // middle element, there is at least one element before and one element after
+                let previous_char = tuple.get(index - 1).unwrap();
+                let next_char = tuple.get(index + 1).unwrap();
+
+                propositions.iter().for_each(|proposition| {
+                    let mut new_proposition: String;
+
+                    if is_present(proposition, previous_char) {
+                        new_proposition = get_string_after_first_occurrence(proposition, previous_char);
+                    } else {
+                        new_proposition = proposition.clone();
+                    }
+                    if is_present(&new_proposition, next_char) {
+                        new_proposition = get_string_before_last_occurrence(&new_proposition, next_char);
+                    }
+
+                    if !is_present(&new_proposition, current_char) {
+                        new_proposition.push(*current_char);
+                    }
+
+                    if is_present(proposition, previous_char) {
+                        let mut tmp = get_string_before_first_occurrence(proposition, previous_char);
+                        tmp.push(*previous_char);
+                        tmp.push_str(&new_proposition);
+                        new_proposition = tmp;
+                    }
+                    if is_present(proposition, next_char) {
+                        let tmp = get_string_after_last_occurrence(proposition, next_char);
+                        new_proposition.push(*next_char);
+                        new_proposition.push_str(&tmp);
+                    }
+                    // println!("'{}' -> '{}'", proposition, new_proposition);
+                    new_propositions.push(new_proposition);
+                })
             }
         }
 
@@ -126,23 +208,66 @@ fn retrieve_possible_strings_from_string(tuple: &Vec<char>, old_proposition: &St
     propositions
 }
 
-fn get_string_before(string: &String, character: &char) -> String {
+fn get_string_after_last_occurrence(string: &String, character: &char) -> String {
     let mut new_string = String::new();
-    for c in string.chars() {
-        if c == *character {
-            break;
-        }
-        new_string.push(c);
+    let mut index: i32 = (string.len() as i32) - 1;
+
+    while index >= 0 && string.chars().nth(index as usize).unwrap() != *character {
+        index -= 1;
     }
+
+    if index >= 0 {
+        for i in index + 1..(string.len() as i32) {
+            new_string.push(string.chars().nth(i as usize).unwrap())
+        }
+    }
+    // println!("String after last occ '{}': '{}' -> '{}'", character, string, new_string);
+
     new_string
 }
 
-fn get_string_after(string: &String, character: &char) -> String {
+// return string before last occurrence of character
+fn get_string_before_last_occurrence(string: &String, character: &char) -> String {
     let mut new_string = String::new();
-    let index = string.chars().position(|c| c == *character).unwrap();
-    for c in string.chars().skip(index + 1) {
-        new_string.push(c);
+    let mut found_index: i32 = (string.len() - 1) as i32;
+
+    while found_index >= 0 && string.chars().nth(found_index as usize).unwrap() != *character {
+        found_index -= 1;
+    };
+
+    if found_index >= 0 {
+        for i in 0..found_index {
+            new_string.push(string.chars().nth(i as usize).unwrap())
+        }
     }
+    // println!("String before last occ '{}': '{}' -> '{}'", character, string, new_string);
+    new_string
+}
+
+fn get_string_before_first_occurrence(string: &String, character: &char) -> String {
+    let mut new_string = String::new();
+
+    for i in 0..string.len() {
+        if string.chars().nth(i).unwrap() == *character {
+            break;
+        }
+        new_string.push(string.chars().nth(i).unwrap());
+    }
+
+    // println!("String before first occ '{}': '{}' -> '{}'", character, string, new_string);
+    new_string
+}
+
+fn get_string_after_first_occurrence(string: &String, character: &char) -> String {
+    let mut new_string = String::new();
+    let option_index = string.chars().position(|c| c == *character);
+    if option_index.is_some() {
+        let index = option_index.unwrap();
+        for c in string.chars().skip(index + 1) {
+            new_string.push(c);
+        }
+    }
+    // println!("String after first occ '{}': '{}' -> '{}'", character, string, new_string);
     new_string
 }
 
