@@ -4,18 +4,18 @@ use hashcash::dto::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info};
 use shared::{message::{Message, ResponseType, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
 
-use crate::{message_handler::MessageHandler, player::PlayerList};
+use crate::{message_handler::MessageHandler, game::Game};
 
 pub struct Exchanger {
   message_handler: MessageHandler,
-  players: PlayerList,
+  game: Game,
   tx: Sender<Message>,
 }
 
 impl Exchanger {
 
-  pub fn new(message_handler: MessageHandler, tx: Sender<Message>, players: PlayerList) -> Exchanger {
-    Exchanger { message_handler, tx, players }
+  pub fn new(message_handler: MessageHandler, tx: Sender<Message>, game: Game) -> Exchanger {
+    Exchanger { message_handler, tx, game }
   }
 
   pub fn hold_communcation(&mut self, stream: TcpStream) {
@@ -32,8 +32,7 @@ impl Exchanger {
             let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
             self.tx.send(response.message).unwrap();
             if is_start_round {
-              let challenge_message = self.start_round(self.players.pick_random_player().unwrap().name);
-              self.tx.send(challenge_message.message).unwrap();
+              self.challenge();
             }
           }
           ResponseType::Unicast => {
@@ -48,6 +47,14 @@ impl Exchanger {
       }
     }
   }
+
+fn challenge(&mut self) {
+    let challenge_message = self.start_round();
+    let player_name = self.game.players.pick_random_player().unwrap().name;
+    if let Some(mut player) = self.game.players.get_and_remove_player_by_name(&player_name) {
+      player.send_message(challenge_message.message);
+    }
+}
 
   fn parse_message_from_tcp_stream(&self, mut stream: &TcpStream) -> Message {
     let mut message_size = [0; 4];
@@ -76,11 +83,11 @@ impl Exchanger {
     trace!("byte write : {:?}, ", result);
   }
 
-  fn start_round(&self, next_target: String) -> MessageType {
+  fn start_round(&self) -> MessageType {
     let challenge = ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()));
 
     let message = Message::Challenge(challenge);
-    MessageType::boardcast(message)
+    MessageType::unicast(message)
   }
 }
 

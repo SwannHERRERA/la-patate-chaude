@@ -62,3 +62,9 @@ pub struct ReportedChallengeResult {
 pub enum ChallengeType {
     MD5HashCash(MD5HashCash),
 }
+
+#[derive(Debug, Clone)]
+pub enum GameType {
+    HASHCASH,
+    RECOVER_SECRET,
+}

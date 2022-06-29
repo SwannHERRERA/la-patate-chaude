@@ -7,6 +7,7 @@ use shared::message::{Message, MessageType};
 use shared::public_player::PublicPlayer;
 use shared::subscribe::{SubscribeResult, SubscribeError};
 
+use crate::game::Game;
 use crate::player::{PlayerList, Player};
 #[derive(Debug)]
 pub struct MessageHandler {
@@ -17,6 +18,12 @@ pub struct MessageHandler {
 impl MessageHandler {
   pub fn new(players: PlayerList, challenge: Arc<Mutex<Option<ChallengeType>>>) -> MessageHandler {
     MessageHandler { players, challenge }
+  }
+
+  pub fn new_from_game(game: &Game) -> MessageHandler {
+    let players = game.players.clone();
+    let challenge = game.current_chanllenge.clone();
+    MessageHandler::new(players, challenge)
   }
 
   pub fn get_challenge(&self) -> Option<ChallengeType> {
