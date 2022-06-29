@@ -17,6 +17,8 @@ use shared::config::{IP, PORT};
 use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
 use shared::subscribe::SubscribeResult;
+use crate::strategies::{BottomTargetStrategy, RandomTargetStrategy, TargetStrategy, TargetStrategyType, TopTargetStrategy};
+use crate::TargetStrategyType::TopTargetStrategy;
 
 fn main() {
     std::env::set_var("RUST_LOG", config::LOG_LEVEL);
@@ -25,7 +27,7 @@ fn main() {
         Ok(stream) => {
             let client = Client::new();
             client.start_threads(stream);
-        },
+        }
         Err(_) => panic!("Could not connect to server {:?} on port {}", IP, PORT),
     }
 }
@@ -41,6 +43,7 @@ fn solve_challenge(challenge: ChallengeType) -> ChallengeAnswer {
 pub struct Client {
     public_leader_board: PublicLeaderBoard,
     username: String,
+    next_target_strategy: Box<dyn TargetStrategy>,
 }
 
 impl Client {
@@ -50,7 +53,13 @@ impl Client {
         let username = "test".to_string() + &*n1.to_string();
         Client {
             public_leader_board: vec![],
-            username,
+            username: username.clone(),
+            next_target_strategy: Box::new(match rng.gen_range(0..=2) {
+                0 => TargetStrategyType::TopTargetStrategy(TopTargetStrategy { current_name: username }),
+                1 => TargetStrategyType::BottomTargetStrategy(BottomTargetStrategy { current_name: username }),
+                2 => TargetStrategyType::RandomTargetStrategy(RandomTargetStrategy { current_name: username }),
+                _ => {}
+            }.0),
         }
     }
 
@@ -68,7 +77,7 @@ impl Client {
             stream.read(&mut buf_size).unwrap();
             let res_size = u32::from_be_bytes(buf_size);
             if res_size == 0 {
-                continue
+                continue;
             }
 
             let mut buf = vec![0; res_size as usize];
@@ -91,7 +100,7 @@ impl Client {
             }
             Message::Challenge(challenge) => {
                 let challenge_answer = solve_challenge(challenge);
-                let next_target = select_next_user(self.username.clone(), &mut self.public_leader_board).clone();
+                let next_target = self.next_target_strategy.next_target(self.public_leader_board.clone()).clone();
                 debug!("Selected next target: {:?}",next_target);
                 thread_writer.send(ChallengeResult { answer: challenge_answer, next_target: next_target.to_string() }).unwrap();
             }
@@ -142,7 +151,7 @@ fn select_next_user(username: String, public_leader_board: &mut PublicLeaderBoar
     public_leader_board.sort_by(|a, b| b.score.cmp(&a.score));
     for player in public_leader_board {
         if player.name != username && player.is_active {
-            return player.name.clone()
+            return player.name.clone();
         }
     }
     "".to_string()
