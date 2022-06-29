@@ -18,7 +18,6 @@ use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
 use shared::subscribe::SubscribeResult;
 use crate::strategies::{BottomTargetStrategy, RandomTargetStrategy, TargetStrategy, TargetStrategyType, TopTargetStrategy};
-use crate::TargetStrategyType::TopTargetStrategy;
 
 fn main() {
     std::env::set_var("RUST_LOG", config::LOG_LEVEL);
@@ -43,7 +42,7 @@ fn solve_challenge(challenge: ChallengeType) -> ChallengeAnswer {
 pub struct Client {
     public_leader_board: PublicLeaderBoard,
     username: String,
-    next_target_strategy: Box<dyn TargetStrategy>,
+    next_target_strategy: TargetStrategyType,
 }
 
 impl Client {
@@ -51,15 +50,18 @@ impl Client {
         let mut rng = rand::thread_rng();
         let n1: u8 = rng.gen();
         let username = "test".to_string() + &*n1.to_string();
+        let next_target_strategy= match rng.gen_range(0..=2) {
+            0 => TargetStrategyType::TopTargetStrategy(TopTargetStrategy { current_name: username.clone() }),
+            1 => TargetStrategyType::BottomTargetStrategy(BottomTargetStrategy { current_name: username.clone() }),
+            2 => TargetStrategyType::RandomTargetStrategy(RandomTargetStrategy { current_name: username.clone() }),
+            _ => {panic!()}
+        };
+        println!("Selected strategy : {:?}", next_target_strategy);
+        debug!("Selected strategy : {:?}", next_target_strategy);
         Client {
             public_leader_board: vec![],
             username: username.clone(),
-            next_target_strategy: Box::new(match rng.gen_range(0..=2) {
-                0 => TargetStrategyType::TopTargetStrategy(TopTargetStrategy { current_name: username }),
-                1 => TargetStrategyType::BottomTargetStrategy(BottomTargetStrategy { current_name: username }),
-                2 => TargetStrategyType::RandomTargetStrategy(RandomTargetStrategy { current_name: username }),
-                _ => {}
-            }.0),
+            next_target_strategy,
         }
     }
 
@@ -100,7 +102,11 @@ impl Client {
             }
             Message::Challenge(challenge) => {
                 let challenge_answer = solve_challenge(challenge);
-                let next_target = self.next_target_strategy.next_target(self.public_leader_board.clone()).clone();
+                let next_target = match self.next_target_strategy.clone() {
+                    TargetStrategyType::RandomTargetStrategy(strategy) => {strategy.next_target(self.public_leader_board.clone())}
+                    TargetStrategyType::TopTargetStrategy(strategy) => {strategy.next_target(self.public_leader_board.clone())}
+                    TargetStrategyType::BottomTargetStrategy(strategy) => {strategy.next_target(self.public_leader_board.clone())}
+                };
                 debug!("Selected next target: {:?}",next_target);
                 thread_writer.send(ChallengeResult { answer: challenge_answer, next_target: next_target.to_string() }).unwrap();
             }

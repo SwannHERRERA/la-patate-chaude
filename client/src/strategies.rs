@@ -1,19 +1,19 @@
 use rand::{Rng, thread_rng};
-use shared::message::Message::PublicLeaderBoard;
 use shared::message::PublicLeaderBoard;
-use shared::public_player::PublicPlayer;
-use crate::strategies::TargetStrategyType::TopTargetStrategy;
 
+#[derive(Debug, Clone)]
 pub struct RandomTargetStrategy {
     pub(crate) current_name: String}
 
+#[derive(Debug, Clone)]
 pub struct TopTargetStrategy {
     pub(crate) current_name: String}
 
+#[derive(Debug, Clone)]
 pub struct BottomTargetStrategy {
     pub(crate) current_name: String}
 
-#[derive(Rand)]
+#[derive(Debug, Clone)]
 pub enum TargetStrategyType {
     RandomTargetStrategy(RandomTargetStrategy),
     TopTargetStrategy(TopTargetStrategy),
@@ -22,7 +22,7 @@ pub enum TargetStrategyType {
 
 pub trait TargetStrategy {
     fn new(current_name: String) -> Self;
-    fn next_target(&self, public_leader_board: PublicLeaderBoard) -> String;
+    fn next_target(self, public_leader_board: PublicLeaderBoard) -> String;
 }
 
 impl TargetStrategy for TopTargetStrategy {
@@ -33,7 +33,7 @@ impl TargetStrategy for TopTargetStrategy {
     fn next_target(self, mut public_leader_board: PublicLeaderBoard) -> String {
         public_leader_board.sort_by(|a, b| b.score.cmp(&a.score));
         for player in public_leader_board {
-            if player.name != username && player.is_active {
+            if player.name != self.current_name && player.is_active {
                 return player.name.clone();
             }
         }
@@ -49,7 +49,7 @@ impl TargetStrategy for BottomTargetStrategy {
     fn next_target(self, mut public_leader_board: PublicLeaderBoard) -> String {
         public_leader_board.sort_by(|a, b| a.score.cmp(&b.score));
         for player in public_leader_board {
-            if player.name != username && player.is_active {
+            if player.name != self.current_name && player.is_active {
                 return player.name.clone();
             }
         }
@@ -63,10 +63,10 @@ impl TargetStrategy for RandomTargetStrategy {
     }
 
     fn next_target(self, mut public_leader_board: PublicLeaderBoard) -> String {
-        let index = public_leader_board.iter().position(|&r| r.name == "two").unwrap();
+        let index = public_leader_board.iter().position(|r| r.name.clone() == self.current_name).unwrap();
         public_leader_board.remove(index);
         let mut rng = thread_rng();
-        let target_index: u32 = rng.gen_range(0..public_leader_board.len());
+        let target_index = rng.gen_range(0..public_leader_board.len());
         public_leader_board.get(target_index as usize).unwrap().name.to_string()
     }
 }
