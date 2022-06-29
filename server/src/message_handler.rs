@@ -1,6 +1,6 @@
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-use hashcash::{MD5HashCash, MD5HashCashOutput};
+use hashcash::dto::{MD5HashCash, MD5HashCashOutput};
 use log::{info, debug, trace, error};
 use shared::challenge::{ChallengeType, ChallengeAnswer, Challenge};
 use shared::message::{Message, MessageType};
@@ -57,6 +57,9 @@ impl MessageHandler {
   }
 
   fn handle_start_game(&self) -> Option<MessageType> {
+    if self.players.len() == 0 {
+      return None;
+    }
     let start_game_message = Message::PublicLeaderBoard(self.players.get_players());
     debug!("Start Game Message: {:?}", start_game_message);
     let answer = MessageType::boardcast(start_game_message);

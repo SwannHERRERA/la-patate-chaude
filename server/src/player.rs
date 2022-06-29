@@ -42,6 +42,10 @@ impl PlayerList {
         self.players.lock().unwrap().iter().map(|p| p.info_public.clone()).collect()
     }
 
+    pub fn len(&self) -> usize {
+      self.players.lock().unwrap().len()
+    }
+
     pub fn has_player_with_name(&self, name: &str) -> bool {
       self.players.lock().unwrap().iter().any(|p| p.info_public.name == name)
     }

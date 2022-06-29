@@ -32,7 +32,7 @@ impl Exchanger {
             let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
             self.tx.send(response.message).unwrap();
             if is_start_round {
-              let challenge_message = self.start_round();
+              let challenge_message = self.start_round(self.players.pick_random_player().unwrap().name);
               self.tx.send(challenge_message.message).unwrap();
             }
           }
