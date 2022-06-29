@@ -1,3 +1,5 @@
+extern crate rand;
+use rand::Rng;
 use std::{net::TcpStream, sync::{Mutex, Arc}};
 use shared::public_player::PublicPlayer;
 
@@ -42,5 +44,11 @@ impl PlayerList {
 
     pub fn has_player_with_name(&self, name: &str) -> bool {
       self.players.lock().unwrap().iter().any(|p| p.info_public.name == name)
+    }
+
+    pub fn pick_random_player(&self) -> Option<PublicPlayer> {
+      let mut rng = rand::thread_rng();
+      let index = rng.gen_range(0..self.players.lock().unwrap().len());
+      self.players.lock().unwrap().get(index).map(|p| p.info_public.clone())
     }
 }

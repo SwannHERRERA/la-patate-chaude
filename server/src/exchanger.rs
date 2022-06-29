@@ -4,46 +4,48 @@ use hashcash::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info};
 use shared::{message::{Message, ResponseType, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
 
-use crate::message_handler::MessageHandler;
+use crate::{message_handler::MessageHandler, player::PlayerList};
 
 pub struct Exchanger {
   message_handler: MessageHandler,
+  players: PlayerList,
   tx: Sender<Message>,
 }
 
 impl Exchanger {
 
-  pub fn new(message_handler: MessageHandler, tx: Sender<Message>) -> Exchanger {
-    Exchanger { message_handler, tx }
+  pub fn new(message_handler: MessageHandler, tx: Sender<Message>, players: PlayerList) -> Exchanger {
+    Exchanger { message_handler, tx, players }
   }
 
   pub fn hold_communcation(&mut self, stream: TcpStream) {
     info!("peer address={:?}", stream.peer_addr());
     loop  {
       let parsed_message = self.parse_message_from_tcp_stream(&stream);
-      let response = self.message_handler.handle_message(parsed_message, &stream, self.message_handler.get_challenge());
-      if matches!(response.message, Message::EndOfCommunication) {
-        break;
-      }
-      match response.message_type {
-        ResponseType::Broadcast => {
-          trace!("Broadcast: {:?}", response.message);
-          let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
-          self.tx.send(response.message).unwrap();
-          if  is_start_round{
-            let challenge_message = self.start_round();
-            self.tx.send(challenge_message.message).unwrap();
+      if let Some(response) = self.message_handler.handle_message(parsed_message, &stream, self.message_handler.get_challenge()) {
+        if matches!(response.message, Message::EndOfCommunication) {
+          break;
+        }
+        match response.message_type {
+          ResponseType::Broadcast => {
+            trace!("Broadcast: {:?}", response.message);
+            let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
+            self.tx.send(response.message).unwrap();
+            if is_start_round {
+              let challenge_message = self.start_round();
+              self.tx.send(challenge_message.message).unwrap();
+            }
+          }
+          ResponseType::Unicast => {
+            trace!("Unicast: {:?}", response.message);
+            self.send_response(response.message, &stream);
           }
         }
-        ResponseType::Unicast => {
-          trace!("Unicast: {:?}", response.message);
-          self.send_response(response.message, &stream);
-        }
       }
-    }
-    let shutdown_result = stream.shutdown(Shutdown::Both);
-    if shutdown_result.is_err() {
-      trace!("Shutdown failed: {:?}", shutdown_result);
+      let shutdown_result = stream.shutdown(Shutdown::Both);
+      if shutdown_result.is_err() {
+        trace!("Shutdown failed: {:?}", shutdown_result);
+      }
     }
   }
 
@@ -74,7 +76,7 @@ impl Exchanger {
     trace!("byte write : {:?}, ", result);
   }
 
-  fn start_round(&self) -> MessageType {
+  fn start_round(&self, next_target: String) -> MessageType {
     let challenge = ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()));
 
     let message = Message::Challenge(challenge);

@@ -34,8 +34,9 @@ impl Server {
       info!("players {:?}", self.players.get_players());
       let message_handler = MessageHandler::new(self.players.clone(), self.current_challenge.clone());
       let tx = tx.clone();
+      let players_clone = self.players.clone();
       let handle = thread::spawn(move || {
-        let mut exchanger = Exchanger::new(message_handler, tx);
+        let mut exchanger = Exchanger::new(message_handler, tx, players_clone);
         exchanger.hold_communcation(stream_copy);
       });
       handles.push(handle);
@@ -54,7 +55,6 @@ impl Server {
           let mut players = players.lock().unwrap();
           info!("rx recieve : {:?}", msg);
           for player in players.iter_mut() {
-
             let response = serde_json::to_string(&msg).unwrap();
             let response = response.as_bytes();
             let response_size = response.len() as u32;

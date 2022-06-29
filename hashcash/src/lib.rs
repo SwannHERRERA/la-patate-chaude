@@ -1,8 +1,7 @@
 extern crate rand;
 
 use random_string::generate;
-use rand::thread_rng;
-use rand::Rng;
+use rand::{Rng, thread_rng};
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
