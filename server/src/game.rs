@@ -1,4 +1,4 @@
-use std::sync::{Mutex, Arc};
+use std::{sync::{Mutex, Arc}, time::Instant};
 
 use shared::{challenge::{ChallengeType, GameType}, config};
 
@@ -13,6 +13,7 @@ pub struct Game {
     pub next_target: String,
     pub current_chanllenge: Arc<Mutex<Option<ChallengeType>>>,
     pub current_round: u32,
+    pub round_timer: Arc<Mutex<Option<Instant>>>,
 }
 
 impl Game {
@@ -23,6 +24,7 @@ impl Game {
             game_type: config::GAME_TYPE,
             current_chanllenge: Arc::new(Mutex::new(None)),
             current_round: 0,
+            round_timer: Arc::new(Mutex::new(None)),
         }
     }
 }

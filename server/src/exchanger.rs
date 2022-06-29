@@ -1,4 +1,4 @@
-use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::{Read, Write}};
+use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::{Read, Write}, time::Instant};
 
 use hashcash::dto::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info};
@@ -13,7 +13,6 @@ pub struct Exchanger {
 }
 
 impl Exchanger {
-
   pub fn new(message_handler: MessageHandler, tx: Sender<Message>, game: Game) -> Exchanger {
     Exchanger { message_handler, tx, game }
   }
@@ -49,13 +48,15 @@ impl Exchanger {
     }
   }
 
-fn challenge(&mut self) {
+  fn challenge(&mut self) {
+    let mut now = self.game.round_timer.lock().unwrap();
+    *now = Some(Instant::now());
     let challenge_message = self.start_round();
     let player_name = self.game.players.pick_random_player().unwrap().name;
     if let Some(mut player) = self.game.players.get_and_remove_player_by_name(&player_name) {
       player.send_message(challenge_message.message);
     }
-}
+  }
 
   fn parse_message_from_tcp_stream(&self, mut stream: &TcpStream) -> Message {
     let mut message_size = [0; 4];
