@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn test_hashcash_with_high_complexity() {
         let message = "Bonjour monde".to_string();
-        let complexity = 24;
+        let complexity = 14;
         let output = Hashcash::solve(message.clone(), complexity);
         assert!(check_hash(complexity, output.hashcode));
     }
