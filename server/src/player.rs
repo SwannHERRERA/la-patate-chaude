@@ -73,4 +73,11 @@ impl PlayerList {
         None
       }
     }
+
+    pub fn set_player_inactive(&mut self, stream: &TcpStream) {
+      let index = self.players.lock().unwrap().iter().position(|p| p.info_public.stream_id == stream.peer_addr().unwrap().to_string());
+      if let Some(index) = index {
+        self.players.lock().unwrap()[index].info_public.is_active = false;
+      }
+    }
 }

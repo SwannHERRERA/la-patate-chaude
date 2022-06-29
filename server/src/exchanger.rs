@@ -24,6 +24,7 @@ impl Exchanger {
       let parsed_message = self.parse_message_from_tcp_stream(&stream);
       if let Some(response) = self.message_handler.handle_message(parsed_message, &stream, self.message_handler.get_challenge()) {
         if matches!(response.message, Message::EndOfCommunication) {
+          self.game.players.set_player_inactive(&stream);
           break;
         }
         match response.message_type {

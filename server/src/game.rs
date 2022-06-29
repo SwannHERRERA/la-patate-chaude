@@ -12,6 +12,7 @@ pub struct Game {
     pub game_type: GameType,
     pub next_target: String,
     pub current_chanllenge: Arc<Mutex<Option<ChallengeType>>>,
+    pub current_round: u32,
 }
 
 impl Game {
@@ -21,8 +22,7 @@ impl Game {
             next_target: String::new(),
             game_type: config::GAME_TYPE,
             current_chanllenge: Arc::new(Mutex::new(None)),
+            current_round: 0,
         }
     }
 }
-
-struct Round;
