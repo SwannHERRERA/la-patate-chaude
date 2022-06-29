@@ -1,5 +1,8 @@
-use hashcash::{dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput}, hashcash::Hashcash};
 use serde::{Deserialize, Serialize};
+
+use hashcash::{dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput}, hashcash::Hashcash};
+use recover_secret::challenge_resolve::solve_secret_sentence_challenge;
+use recover_secret::models::{RecoverSecret, RecoverSecretInput, RecoverSecretOutput};
 
 pub trait Challenge {
     /// Données en entrée du challenge
@@ -37,6 +40,26 @@ impl Challenge for MD5HashCash {
     }
 }
 
+impl Challenge for RecoverSecret {
+    type Input = RecoverSecretInput;
+    type Output = RecoverSecretOutput;
+
+    fn name() -> String {
+        "RecoverSecret".to_string()
+    }
+
+    fn new(input: Self::Input) -> Self {
+        RecoverSecret(input)
+    }
+
+    fn solve(&self) -> Self::Output {
+        solve_secret_sentence_challenge(&self.0)
+    }
+
+    fn verify(&self, _: Self::Output) -> bool {
+        todo!()
+    }
+}
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

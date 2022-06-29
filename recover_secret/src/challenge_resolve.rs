@@ -1,4 +1,5 @@
 use crate::models::{RecoverSecretInput, RecoverSecretOutput};
+use crate::string_utils::{get_string_after_first_occurrence, get_string_after_last_occurrence, get_string_before_first_occurrence, get_string_before_last_occurrence, is_present};
 
 pub fn solve_secret_sentence_challenge(input: &RecoverSecretInput) -> RecoverSecretOutput {
     let mut tuples = retrieve_tuples_from_letters(&input);
@@ -208,69 +209,45 @@ fn retrieve_possible_strings_from_string(tuple: &Vec<char>, old_proposition: &St
     propositions
 }
 
-fn get_string_after_last_occurrence(string: &String, character: &char) -> String {
-    let mut new_string = String::new();
-    let mut index: i32 = (string.len() as i32) - 1;
 
-    while index >= 0 && string.chars().nth(index as usize).unwrap() != *character {
-        index -= 1;
+#[cfg(test)]
+mod tests {
+    use crate::challenge_resolve::solve_secret_sentence_challenge;
+    use crate::models::RecoverSecretInput;
+
+    #[test]
+    fn test_solve_secret_sentence_challenge() {
+        let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+            word_count: 1,
+            letters: "iffiiilfatroridato".parse().unwrap(),
+            tuple_sizes: vec![3, 3, 3, 3, 3, 3],
+        };
+
+        let answer = solve_secret_sentence_challenge(&recover_secret_input);
+        assert_eq!(answer.secret_sentence, "iiriflfatrod".to_string());
     }
 
-    if index >= 0 {
-        for i in index + 1..(string.len() as i32) {
-            new_string.push(string.chars().nth(i as usize).unwrap())
-        }
-    }
-    // println!("String after last occ '{}': '{}' -> '{}'", character, string, new_string);
+    #[test]
+    fn another_test_solve_secret_sentence_challenge() {
+        let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+            word_count: 1,
+            letters: "rtlthotzo".parse().unwrap(),
+            tuple_sizes: vec![3, 3, 3],
+        };
 
-    new_string
-}
-
-// return string before last occurrence of character
-fn get_string_before_last_occurrence(string: &String, character: &char) -> String {
-    let mut new_string = String::new();
-    let mut found_index: i32 = (string.len() - 1) as i32;
-
-    while found_index >= 0 && string.chars().nth(found_index as usize).unwrap() != *character {
-        found_index -= 1;
-    };
-
-    if found_index >= 0 {
-        for i in 0..found_index {
-            new_string.push(string.chars().nth(i as usize).unwrap())
-        }
-    }
-    // println!("String before last occ '{}': '{}' -> '{}'", character, string, new_string);
-    new_string
-}
-
-fn get_string_before_first_occurrence(string: &String, character: &char) -> String {
-    let mut new_string = String::new();
-
-    for i in 0..string.len() {
-        if string.chars().nth(i).unwrap() == *character {
-            break;
-        }
-        new_string.push(string.chars().nth(i).unwrap());
+        let answer = solve_secret_sentence_challenge(&recover_secret_input);
+        assert_eq!(answer.secret_sentence, "rtlhzo".to_string());
     }
 
-    // println!("String before first occ '{}': '{}' -> '{}'", character, string, new_string);
-    new_string
-}
+    #[test]
+    fn test_solve_secret_sentence_challenge_multiple_words() {
+        let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+            word_count: 6,
+            letters: "iffiiilfatroridato".parse().unwrap(),
+            tuple_sizes: vec![3, 3, 3, 3, 3, 3],
+        };
 
-fn get_string_after_first_occurrence(string: &String, character: &char) -> String {
-    let mut new_string = String::new();
-    let option_index = string.chars().position(|c| c == *character);
-    if option_index.is_some() {
-        let index = option_index.unwrap();
-        for c in string.chars().skip(index + 1) {
-            new_string.push(c);
-        }
+        let answer = solve_secret_sentence_challenge(&recover_secret_input);
+        assert_eq!(answer.secret_sentence, "i i r i f lfatrod".to_string());
     }
-    // println!("String after first occ '{}': '{}' -> '{}'", character, string, new_string);
-    new_string
-}
-
-fn is_present(string: &String, character: &char) -> bool {
-    string.chars().any(|c| c == *character)
 }

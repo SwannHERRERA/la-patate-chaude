@@ -1,0 +1,117 @@
+pub fn get_string_after_last_occurrence(string: &String, character: &char) -> String {
+    let mut new_string = String::new();
+    let mut index: i32 = (string.len() as i32) - 1;
+
+    while index >= 0 && string.chars().nth(index as usize).unwrap() != *character {
+        index -= 1;
+    }
+
+    if index >= 0 {
+        for i in index + 1..(string.len() as i32) {
+            new_string.push(string.chars().nth(i as usize).unwrap())
+        }
+    }
+    // println!("String after last occ '{}': '{}' -> '{}'", character, string, new_string);
+
+    new_string
+}
+
+// return string before last occurrence of character
+pub fn get_string_before_last_occurrence(string: &String, character: &char) -> String {
+    let mut new_string = String::new();
+    let mut found_index: i32 = (string.len() - 1) as i32;
+
+    while found_index >= 0 && string.chars().nth(found_index as usize).unwrap() != *character {
+        found_index -= 1;
+    };
+
+    if found_index >= 0 {
+        for i in 0..found_index {
+            new_string.push(string.chars().nth(i as usize).unwrap())
+        }
+    }
+    // println!("String before last occ '{}': '{}' -> '{}'", character, string, new_string);
+    new_string
+}
+
+pub fn get_string_before_first_occurrence(string: &String, character: &char) -> String {
+    let mut new_string = String::new();
+
+    if is_present(string,character) {
+        for i in 0..string.len() {
+            if string.chars().nth(i).unwrap() == *character {
+                break;
+            }
+            new_string.push(string.chars().nth(i).unwrap());
+        }
+    }
+
+    // println!("String before first occ '{}': '{}' -> '{}'", character, string, new_string);
+    new_string
+}
+
+pub fn get_string_after_first_occurrence(string: &String, character: &char) -> String {
+    let mut new_string = String::new();
+    let option_index = string.chars().position(|c| c == *character);
+    if option_index.is_some() {
+        let index = option_index.unwrap();
+        for c in string.chars().skip(index + 1) {
+            new_string.push(c);
+        }
+    }
+    // println!("String after first occ '{}': '{}' -> '{}'", character, string, new_string);
+    new_string
+}
+
+pub fn is_present(string: &String, character: &char) -> bool {
+    string.chars().any(|c| c == *character)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::string_utils::{get_string_after_first_occurrence, get_string_after_last_occurrence, get_string_before_first_occurrence, get_string_before_last_occurrence, is_present};
+
+    #[test]
+    fn test_is_present() {
+        let string = "hello world".to_string();
+        assert!(is_present(&string, &'o'));
+        assert!(!is_present(&string, &'z'));
+    }
+
+    #[test]
+    fn test_get_string_after_last_occurrence() {
+        let string = "hello world".to_string();
+        let new_string = get_string_after_last_occurrence(&string, &'o');
+        assert_eq!(new_string, "rld".to_string());
+        let not_found_string = get_string_after_last_occurrence(&string, &'z');
+        assert_eq!(not_found_string, "".to_string());
+    }
+
+    #[test]
+    fn test_get_string_before_last_occurrence() {
+        let string = "hello world".to_string();
+        let new_string = get_string_before_last_occurrence(&string, &'o');
+        assert_eq!(new_string, "hello w".to_string());
+        let not_found_string = get_string_before_last_occurrence(&string, &'z');
+        assert_eq!(not_found_string, "".to_string());
+    }
+
+    #[test]
+    fn test_get_string_before_first_occurrence() {
+        let string = "hello world".to_string();
+        let new_string = get_string_before_first_occurrence(&string, &'o');
+        assert_eq!(new_string, "hell".to_string());
+        let not_found_string = get_string_before_first_occurrence(&string, &'z');
+        assert_eq!(not_found_string, "".to_string());
+    }
+
+    #[test]
+    fn test_get_string_after_first_occurrence() {
+        let string = "hello world".to_string();
+        let new_string = get_string_after_first_occurrence(&string, &'o');
+        assert_eq!(new_string, " world".to_string());
+        let not_found_string = get_string_after_first_occurrence(&string, &'z');
+        assert_eq!(not_found_string, "".to_string());
+    }
+
+}
