@@ -1,0 +1,1 @@
+pub const NTHREADS: usize = 10;

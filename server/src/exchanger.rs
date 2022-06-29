@@ -1,7 +1,8 @@
-use std::{sync::{mpsc::Sender}, net::{TcpStream, Shutdown}, io::{Read, Write}};
+use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::{Read, Write}};
 
+use hashcash::dto::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info};
-use shared::message::{Message, ResponseType};
+use shared::{message::{Message, ResponseType, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
 
 use crate::message_handler::MessageHandler;
 
@@ -27,7 +28,12 @@ impl Exchanger {
       match response.message_type {
         ResponseType::Broadcast => {
           trace!("Broadcast: {:?}", response.message);
+          let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
           self.tx.send(response.message).unwrap();
+          if  is_start_round{
+            let challenge_message = self.start_round();
+            self.tx.send(challenge_message.message).unwrap();
+          }
         }
         ResponseType::Unicast => {
           trace!("Unicast: {:?}", response.message);
@@ -66,6 +72,11 @@ impl Exchanger {
     let response_length_as_bytes = response_size.to_be_bytes();
     let result = tcp_stream.write(&[&response_length_as_bytes, response].concat());
     trace!("byte write : {:?}, ", result);
+  }
+
+  fn start_round(&self) -> MessageType {
+    let message = Message::Challenge(ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new())));
+    MessageType::boardcast(message)
   }
 }
 

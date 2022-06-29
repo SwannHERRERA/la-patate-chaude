@@ -33,6 +33,7 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "hashcash",
+ "log",
  "rand",
  "serde",
  "serde_json",
@@ -67,6 +68,8 @@ dependencies = [
 name = "hashcash"
 version = "0.0.0"
 dependencies = [
+ "md5",
+ "rand",
  "serde",
 ]
 
@@ -270,7 +273,6 @@ name = "shared"
 version = "0.1.0"
 dependencies = [
  "hashcash",
- "md5",
  "rand",
  "recover_secret",
  "serde",

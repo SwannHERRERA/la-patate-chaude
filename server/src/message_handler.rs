@@ -48,9 +48,9 @@ impl MessageHandler {
   }
 
   fn handle_start_game(&self) -> MessageType {
-    let strat_game_message = Message::PublicLeaderBoard(self.players.get_players());
-    debug!("Start Game Message: {:?}", strat_game_message);
-    let answer = MessageType::boardcast(strat_game_message);
+    let start_game_message = Message::PublicLeaderBoard(self.players.get_players());
+    debug!("Start Game Message: {:?}", start_game_message);
+    let answer = MessageType::boardcast(start_game_message);
     debug!("Answer: {:?}", answer);
     answer
   }
