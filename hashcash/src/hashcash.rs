@@ -40,3 +40,33 @@ impl Hashcash {
         worker_rx.recv().unwrap()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::check_hash;
+
+    #[test]
+    fn test_hashcash() {
+        let message = "hello world".to_string();
+        let complexity = 5;
+        let output = Hashcash::solve(message.clone(), complexity);
+        assert!(check_hash(complexity, output.hashcode));
+    }
+
+    #[test]
+    fn test_hashcash_with_long_string() {
+        let message = "lorem ipsum dolor sit atme les fronti7ere des regions ont bien Changéeeeeqf".to_string();
+        let complexity = 5;
+        let output = Hashcash::solve(message.clone(), complexity);
+        assert!(check_hash(complexity, output.hashcode));
+    }
+
+    #[test]
+    fn test_hashcash_with_high_complexity() {
+        let message = "Bonjour monde".to_string();
+        let complexity = 5;
+        let output = Hashcash::solve(message.clone(), complexity);
+        assert!(check_hash(complexity, output.hashcode));
+    }
+}
