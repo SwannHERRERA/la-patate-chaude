@@ -33,6 +33,7 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "hashcash",
+ "log",
  "rand",
  "serde",
  "serde_json",
