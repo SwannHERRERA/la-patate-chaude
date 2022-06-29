@@ -65,6 +65,6 @@ pub enum ChallengeType {
 
 #[derive(Debug, Clone)]
 pub enum GameType {
-    HASHCASH,
-    RECOVER_SECRET,
+    Hashcash,
+    RecoverSecret,
 }

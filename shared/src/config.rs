@@ -7,4 +7,4 @@ pub const PORT: u16 = 7878;
 pub const LOG_LEVEL: &'static str = "debug";
 pub const TIMEOUT: Duration = Duration::from_secs(10);
 pub const ROUND: usize = 3;
-pub const GAME_TYPE: GameType = GameType::HASHCASH;
+pub const GAME_TYPE: GameType = GameType::Hashcash;
