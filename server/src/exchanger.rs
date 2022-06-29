@@ -1,6 +1,6 @@
-use std::{sync::{mpsc::Sender}, net::{TcpStream, Shutdown}, io::{Read, Write}};
+use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::{Read, Write}};
 
-use hashcash::{MD5HashCashInput, MD5HashCash};
+use hashcash::dto::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info};
 use shared::{message::{Message, ResponseType, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
 
