@@ -33,11 +33,18 @@ impl Hashcash {
                         continue;
                     }
                     is_solved.store(true, Ordering::Relaxed);
-                    worker_tx.send(MD5HashCashOutput { seed, hashcode: md5.to_string() }).unwrap();
+                    let result = worker_tx.send(MD5HashCashOutput { seed, hashcode: md5.to_string() });
+                    if result.is_err() {
+                        break;
+                    }
                 }
             });
         }
-        worker_rx.recv().unwrap()
+        let workers_result = worker_rx.recv();
+        if workers_result.is_err() {
+            panic!("error");
+        }
+        workers_result.unwrap()
     }
 }
 
@@ -65,7 +72,7 @@ mod tests {
     #[test]
     fn test_hashcash_with_high_complexity() {
         let message = "Bonjour monde".to_string();
-        let complexity = 5;
+        let complexity = 24;
         let output = Hashcash::solve(message.clone(), complexity);
         assert!(check_hash(complexity, output.hashcode));
     }
