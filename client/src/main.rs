@@ -10,14 +10,13 @@ use rand;
 use rand::Rng;
 
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType};
-use shared::config;
-use shared::config::{IP, PORT};
+use shared::config::{IP, PORT, LOG_LEVEL};
 use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
 use shared::subscribe::SubscribeResult;
 
 fn main() {
-    std::env::set_var("RUST_LOG", config::LOG_LEVEL);
+    std::env::set_var("RUST_LOG", LOG_LEVEL);
     let address = SocketAddr::from((IP, PORT));
     match TcpStream::connect(address) {
         Ok(stream) => {

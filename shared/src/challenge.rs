@@ -32,8 +32,8 @@ impl Challenge for MD5HashCash {
         Hashcash::solve(self.0.message.clone(), self.0.complexity)
     }
 
-    fn verify(&self, _: Self::Output) -> bool {
-        todo!()
+    fn verify(&self, result: Self::Output) -> bool {
+        Hashcash::verify(result.hashcode.clone(), self.0.complexity)
     }
 }
 

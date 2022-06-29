@@ -46,6 +46,10 @@ impl Hashcash {
         }
         workers_result.unwrap()
     }
+
+    pub fn verify(hash: String, complexity: u32) -> bool {
+        check_hash(complexity, hash)
+    }
 }
 
 #[cfg(test)]
