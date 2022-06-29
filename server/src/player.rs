@@ -43,10 +43,6 @@ impl PlayerList {
         self.players.lock().unwrap().push(player);
     }
 
-    pub fn remove_player(&mut self, player: Player) {
-        self.players.lock().unwrap().retain(|p| p.info_public.name != player.info_public.name);
-    }
-
     pub fn get_players(&self) -> Vec<PublicPlayer> {
         self.players.lock().unwrap().iter().map(|p| p.info_public.clone()).collect()
     }

@@ -4,3 +4,4 @@ comment fonctionne le système de points
 
 Notion de timeout
 Notion de round
+comment est-ce qu'on lance le server

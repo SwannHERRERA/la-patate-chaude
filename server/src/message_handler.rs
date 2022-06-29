@@ -1,5 +1,6 @@
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 use hashcash::dto::{MD5HashCash, MD5HashCashOutput};
 use log::{info, debug, trace, error};
 use shared::challenge::{ChallengeType, ChallengeAnswer, Challenge};
@@ -81,12 +82,14 @@ impl MessageHandler {
     Some(answer)
   }
 
-  fn handle_challenge_result(&self, answer: ChallengeAnswer, next_target: String, challenge: Option<ChallengeType>) -> Option<MessageType> {
+  fn handle_challenge_result(&self, answer: ChallengeAnswer, _next_target: String, challenge: Option<ChallengeType>) -> Option<MessageType> {
     match challenge {
       Some(challenge) => {
         let (challenge, answer) = self.handle_md5(challenge, answer);
         if challenge.verify(answer) {
           // increase score of winning player
+          let now = Instant::now();
+          let elapsed = now.elapsed();
           return Some(MessageType::boardcast(Message::PublicLeaderBoard(self.players.get_players())));
         }
         None
