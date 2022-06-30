@@ -1,3 +1,4 @@
 pub mod challenge_resolve;
+pub mod file_utils;
 pub mod models;
-mod string_utils;
+pub mod string_utils;

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 pub fn get_string_after_last_occurrence(string: &String, character: &char) -> String {
     let mut new_string = String::new();
     let mut index: i32 = (string.len() as i32) - 1;
@@ -108,6 +110,34 @@ pub fn count_spaces_in_string(string: &String) -> usize {
 
 pub fn word_count(string: &String) -> usize {
     string.split_whitespace().count()
+}
+
+pub fn generate_dictionary_hashmap(dictionary: &String) -> HashMap<char, Vec<String>> {
+    let mut dictionary_hashmap: HashMap<char, Vec<String>> = HashMap::new();
+    let mut current_char: char = ' ';
+    let mut word_vec: Vec<String> = Vec::new();
+
+    dictionary.split_whitespace().for_each(|word| {
+        if word.chars().nth(0).unwrap() != current_char {
+            dictionary_hashmap.insert(current_char, word_vec.clone());
+            current_char = word.chars().nth(0).unwrap();
+            word_vec = Vec::new();
+            word_vec.push(word.to_string());
+        } else {
+            word_vec.push(word.to_string());
+        }
+    });
+
+    return dictionary_hashmap;
+}
+
+pub fn is_word_in_dictionary(word: &String, dictionary: &HashMap<char, Vec<String>>) -> bool {
+    let first_char = word.chars().next().unwrap();
+    if dictionary.contains_key(&first_char) {
+        let word_vec = dictionary.get(&first_char).unwrap();
+        return word_vec.iter().any(|w| w == word);
+    }
+    false
 }
 
 #[cfg(test)]

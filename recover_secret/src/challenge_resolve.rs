@@ -1,13 +1,19 @@
+use std::collections::HashMap;
+
 use crate::models::{RecoverSecretInput, RecoverSecretOutput};
 use crate::string_utils::{
-    add_char_at_index, count_spaces_in_string, get_string_after_first_occurrence,
-    get_string_after_last_occurrence, get_string_before_first_occurrence,
-    get_string_before_last_occurrence, is_present, word_count,
+    add_char_at_index, get_string_after_first_occurrence, get_string_after_last_occurrence,
+    get_string_before_first_occurrence, get_string_before_last_occurrence, is_present,
+    is_word_in_dictionary, word_count,
 };
 
-pub fn solve_secret_sentence_challenge(input: &RecoverSecretInput) -> RecoverSecretOutput {
+pub fn solve_secret_sentence_challenge(
+    input: &RecoverSecretInput,
+    dictionary: &HashMap<char, Vec<String>>,
+) -> RecoverSecretOutput {
     let mut tuples = retrieve_tuples_from_letters(&input);
-    let secret_sentence = retrieve_secret_sequence_from_tuples(&mut tuples, &input.word_count);
+    let secret_sentence =
+        retrieve_secret_sentence_from_tuples(&mut tuples, &input.word_count, dictionary);
     RecoverSecretOutput { secret_sentence }
 }
 
@@ -25,15 +31,18 @@ fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
     tuples
 }
 
-fn retrieve_secret_sequence_from_tuples(tuples: &mut Vec<Vec<char>>, nb_words: &usize) -> String {
+fn retrieve_secret_sentence_from_tuples(
+    tuples: &mut Vec<Vec<char>>,
+    nb_words: &usize,
+    dictionary: &HashMap<char, Vec<String>>,
+) -> String {
     let mut propositions: Vec<String> = Vec::new();
     retrieve_possible_strings_from_tuples(tuples, &mut propositions, nb_words);
 
-    display_possibilities(&propositions);
+    // display_possibilities(&propositions);
 
     if propositions.len() > 0 {
-        // TODO retrieve from dictionnary here
-        return propositions[0].clone();
+        return find_sentence(&propositions, dictionary);
     } else {
         panic!("No solution found.");
     }
@@ -74,7 +83,7 @@ fn retrieve_possible_strings_from_tuples(
         propositions.clear();
         propositions.append(&mut other_propositions);
     }
-
+    println!("{} propositions found.", propositions.len());
     retrieve_possible_strings_from_tuples(tuples, propositions, nb_words);
 }
 
@@ -356,32 +365,62 @@ fn push_proposition_with_string_after_char(
     }
 }
 
+fn find_sentence(possibilities: &Vec<String>, dictionary: &HashMap<char, Vec<String>>) -> String {
+    for possibility in possibilities {
+        let mut founded = true;
+        let words: Vec<String> = possibility
+            .to_ascii_lowercase()
+            .split(|c: char| c == ' ' || c == '\'' || c == '-')
+            .map(|s| s.to_string())
+            .collect();
+
+        for word in words {
+            if !is_word_in_dictionary(&word, dictionary) {
+                founded = false;
+                break;
+            }
+        }
+        if founded {
+            return possibility.clone();
+        }
+    }
+    panic!("No sentence found");
+}
+
 #[cfg(test)]
 mod tests {
     use crate::challenge_resolve::solve_secret_sentence_challenge;
+    use crate::file_utils::read_file;
     use crate::models::RecoverSecretInput;
+    use crate::string_utils::generate_dictionary_hashmap;
 
     #[test]
     fn test_solve_secret_sentence_challenge() {
+        let dictionary = read_file("data/liste-de-ses-morts.dic");
+        let dictionary_hashmap = generate_dictionary_hashmap(&dictionary);
+
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 1,
             letters: "iffiiilfatroridato".parse().unwrap(),
             tuple_sizes: vec![3, 3, 3, 3, 3, 3],
         };
 
-        let answer = solve_secret_sentence_challenge(&recover_secret_input);
+        let answer = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
         assert_eq!(answer.secret_sentence, "iiriflfatrod".to_string());
     }
 
     #[test]
     fn another_test_solve_secret_sentence_challenge() {
+        let dictionary = read_file("data/liste-de-ses-morts.dic");
+        let dictionary_hashmap = generate_dictionary_hashmap(&dictionary);
+
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 1,
             letters: "rtlthotzo".parse().unwrap(),
             tuple_sizes: vec![3, 3, 3],
         };
 
-        let answer = solve_secret_sentence_challenge(&recover_secret_input);
+        let answer = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
         assert_eq!(answer.secret_sentence, "rtlhzo".to_string());
     }
 
