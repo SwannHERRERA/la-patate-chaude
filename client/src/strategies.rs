@@ -1,4 +1,5 @@
 use rand::{Rng, thread_rng};
+
 use shared::message::PublicLeaderBoard;
 
 #[derive(Debug, Clone)]
@@ -37,7 +38,7 @@ impl TargetStrategy for TopTargetStrategy {
                 return player.name.clone();
             }
         }
-        "".to_string()
+        panic!("No more players in the game");
     }
 }
 
@@ -53,7 +54,7 @@ impl TargetStrategy for BottomTargetStrategy {
                 return player.name.clone();
             }
         }
-        "".to_string()
+        panic!("No more players in the game");
     }
 }
 
@@ -66,6 +67,9 @@ impl TargetStrategy for RandomTargetStrategy {
         let index = public_leader_board.iter().position(|r| r.name.clone() == self.current_name).unwrap();
         public_leader_board.remove(index);
         let mut rng = thread_rng();
+        if public_leader_board.len() == 0 {
+            panic!("No more players in the game");
+        }
         let target_index = rng.gen_range(0..public_leader_board.len());
         public_leader_board.get(target_index as usize).unwrap().name.to_string()
     }
