@@ -59,6 +59,44 @@ pub fn get_string_after_first_occurrence(string: &String, character: &char) -> S
     new_string
 }
 
+pub fn get_string_after_n_occurrence(
+    string: &String,
+    character: &char,
+    occurrence: &usize,
+) -> String {
+    let mut new_string = String::new();
+    let index = find_n_utf8(string, *character, occurrence);
+
+    if index.is_some() {
+        new_string.push_str(&string[(index.unwrap() + 1)..]);
+    }
+
+    // println!(
+    //     "String after first occ '{}': '{}' -> '{}'",
+    //     character, string, new_string
+    // );
+    new_string
+}
+
+pub fn get_string_before_n_occurrence(
+    string: &String,
+    character: &char,
+    occurrence: &usize,
+) -> String {
+    let mut new_string = String::new();
+    let index = find_n_utf8(string, *character, occurrence);
+
+    if index.is_some() {
+        new_string.push_str(&string[..index.unwrap()]);
+    }
+
+    // println!(
+    //     "String after first occ '{}': '{}' -> '{}'",
+    //     character, string, new_string
+    // );
+    new_string
+}
+
 pub fn add_char_at_index(string: &String, character: &char, index: &usize) -> String {
     if string.len() == 0 {
         return character.to_string();
@@ -80,7 +118,7 @@ pub fn add_char_at_index(string: &String, character: &char, index: &usize) -> St
 }
 
 pub fn is_present(string: &String, character: &char) -> bool {
-    string.chars().any(|c| c == *character)
+    string.contains(*character)
 }
 
 pub fn count_spaces_in_string(string: &String) -> usize {
@@ -135,12 +173,24 @@ pub fn find_utf8(s: &str, chr: char) -> Option<usize> {
     }
 }
 
+pub fn find_n_utf8(s: &str, chr: char, n: &usize) -> Option<usize> {
+    let mut count = 0;
+    let mut index = 0;
+    for c in s.chars() {
+        if c == chr {
+            count += 1;
+        }
+        if count == *n {
+            return Some(index);
+        }
+        index += 1;
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::string_utils::{
-        add_char_at_index, get_string_after_first_occurrence, get_string_after_last_occurrence,
-        get_string_before_first_occurrence, get_string_before_last_occurrence, is_present,
-    };
+    use crate::string_utils::{add_char_at_index, get_string_after_first_occurrence, get_string_after_last_occurrence, get_string_after_n_occurrence, get_string_before_first_occurrence, get_string_before_last_occurrence, get_string_before_n_occurrence, is_present};
 
     #[test]
     fn test_is_present() {
@@ -216,5 +266,29 @@ mod tests {
         let string = "hello".to_string();
         let new_string = add_char_at_index(&string, &'z', &5);
         assert_eq!(new_string, "helloz".to_string());
+    }
+
+    #[test]
+    fn text_get_string_after_n_occurrence() {
+        let string = "hello world".to_string();
+        let new_string = get_string_after_n_occurrence(&string, &'o', &2);
+        assert_eq!(new_string, "rld".to_string());
+        let not_found_string = get_string_after_n_occurrence(&string, &'z', &2);
+        assert_eq!(not_found_string, "".to_string());
+        let empty_string = get_string_after_n_occurrence(&"".to_string(), &'z', &2);
+        assert_eq!(empty_string, "".to_string());
+        let empty_string_2 = get_string_after_n_occurrence(&"z".to_string(), &'z', &2);
+        assert_eq!(empty_string_2, "".to_string());
+    }
+
+    #[test]
+    fn test_get_string_before_n_occurrence() {
+        let string = "hello world".to_string();
+        let new_string = get_string_before_n_occurrence(&string, &'o', &2);
+        assert_eq!(new_string, "hello w".to_string());
+        let not_found_string = get_string_before_n_occurrence(&"zzzzz".to_string(), &'z', &3);
+        assert_eq!(not_found_string, "zz".to_string());
+        let empty_string = get_string_before_n_occurrence(&"z".to_string(), &'z', &2);
+        assert_eq!(empty_string, "".to_string());
     }
 }

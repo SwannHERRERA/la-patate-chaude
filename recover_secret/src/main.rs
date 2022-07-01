@@ -26,8 +26,8 @@ fn main() {
     // };
     let recover_secret_input2: RecoverSecretInput = RecoverSecretInput {
         word_count: 3,
-        letters: "iffiii".parse().unwrap(),
-        tuple_sizes: vec![3, 3],
+        letters: "iffiiilfatroridatol".parse().unwrap(),
+        tuple_sizes: vec![3, 3, 3, 3, 3, 3],
     };
 
     println!("Solving challenge 1...");
@@ -35,5 +35,8 @@ fn main() {
     println!("{:?}", output);
     println!("Solving challenge 2...");
     let output = solve_secret_string_challenge(&recover_secret_input2);
+    println!("{:?}", output);
+    println!("Solving challenge 3...");
+    let output = solve_secret_sentence_challenge(&recover_secret_input2, &dictionary_hashmap);
     println!("{:?}", output);
 }
