@@ -13,30 +13,51 @@ fn main() {
     println!("Done !");
 
     //RecoverSecretInput
-    let recover_secret_input1: RecoverSecretInput = RecoverSecretInput {
+    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
         word_count: 2,
         letters: "C'echCt chut cou't htu'ehuest o".parse().unwrap(),
         tuple_sizes: vec![5, 6, 5, 4, 2, 4, 5],
     };
 
-    // let recover_secret_input2: RecoverSecretInput = RecoverSecretInput {
-    //     word_count: 3,
-    //     letters: "iffiiilfatroridatol ft f".parse().unwrap(),
-    //     tuple_sizes: vec![3, 3, 3, 3, 3, 3, 3, 3],
-    // };
-    let recover_secret_input2: RecoverSecretInput = RecoverSecretInput {
-        word_count: 3,
-        letters: "iffiiilfatroridatol".parse().unwrap(),
+    println!("Solving challenge 1 (true sentence)...\n{:?}", recover_secret_input);
+    let output = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
+    println!("{:?}", output);
+
+    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+        word_count: 1,
+        letters: "iffiiilfatroridato".parse().unwrap(),
         tuple_sizes: vec![3, 3, 3, 3, 3, 3],
     };
 
-    println!("Solving challenge 1...");
-    let output = solve_secret_sentence_challenge(&recover_secret_input1, &dictionary_hashmap);
+    println!("\nSolving challenge 2 (random string)...\n{:?}", recover_secret_input);
+    let output = solve_secret_string_challenge(&recover_secret_input);
     println!("{:?}", output);
-    println!("Solving challenge 2...");
-    let output = solve_secret_string_challenge(&recover_secret_input2);
+
+    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+        word_count: 1,
+        letters: "rtlthotzo".parse().unwrap(),
+        tuple_sizes: vec![3, 3, 3],
+    };
+    println!("\nSolving challenge 3 (random string)...\n{:?}", recover_secret_input);
+    let output = solve_secret_string_challenge(&recover_secret_input);
     println!("{:?}", output);
-    println!("Solving challenge 3...");
-    let output = solve_secret_sentence_challenge(&recover_secret_input2, &dictionary_hashmap);
+
+    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+        word_count: 6,
+        letters: "iffiiilfatroridato".parse().unwrap(),
+        tuple_sizes: vec![3, 3, 3, 3, 3, 3],
+    };
+    println!("\nSolving challenge 4 (random string)...\n{:?}", recover_secret_input);
+    let output = solve_secret_string_challenge(&recover_secret_input);
+    println!("{:?}", output);
+
+    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+        word_count: 3,
+        letters: "ififrdlfatoil ft f".parse().unwrap(),
+        tuple_sizes: vec![6, 6, 6],
+    };
+
+    println!("\nSolving challenge 5 (true sentence)...\n{:?}", recover_secret_input);
+    let output = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
     println!("{:?}", output);
 }

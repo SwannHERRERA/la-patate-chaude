@@ -80,7 +80,7 @@ pub fn get_string_after_n_occurrence(
 
 pub fn get_string_before_sequence(string: &String, sequence: &String) -> String {
     let mut new_string = String::new();
-    let index = find_sequence_utf8(string, sequence);
+    let index = rfind_sequence_utf8(string, sequence);
 
     if index.is_some() {
         new_string.push_str(&string[..index.unwrap()]);
@@ -247,12 +247,19 @@ pub fn find_sequence_utf8(s: &str, sequence: &str) -> Option<usize> {
     }
 }
 
+pub fn rfind_sequence_utf8(s: &str, sequence: &str) -> Option<usize> {
+    if let Some(rev_pos) = s.rfind(sequence) {
+        Some(rev_pos)
+    } else {
+        None
+    }
+}
+
 // add spaces in sequence string
 // space must be between two non-whitespace characters
 pub fn add_spaces_in_sequence(sequence: &str, nb_spaces: &usize) -> String {
     let mut new_sequence = String::new();
     let mut nb_spaces_left = *nb_spaces;
-    let mut last_char = ' ';
     for (index, current_char) in sequence[..sequence.len() - 1].chars().enumerate() {
         new_sequence.push(current_char);
         if current_char == ' ' || sequence.chars().nth(index + 1).unwrap() == ' ' {
