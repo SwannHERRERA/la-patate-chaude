@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use crate::models::{RecoverSecretInput, RecoverSecretOutput};
 use crate::string_utils::{
-    add_char_at_index, get_string_after_first_occurrence, get_string_after_last_occurrence,
-    get_string_after_n_occurrence, get_string_before_first_occurrence,
-    get_string_before_last_occurrence, get_string_before_n_occurrence, is_present,
-    is_word_in_dictionary, word_count,
+    add_char_at_index, add_spaces_in_sequence, get_string_after_first_occurrence,
+    get_string_after_last_occurrence, get_string_after_n_occurrence,
+    get_string_before_first_occurrence, get_string_before_last_occurrence,
+    get_string_before_n_occurrence, is_present, is_word_in_dictionary, word_count,
 };
 
 pub fn solve_secret_sentence_challenge(
@@ -58,10 +58,20 @@ fn retrieve_secret_sentence_from_tuples(
         if *is_sentence_valid {
             return find_sentence(&propositions, dictionary);
         }
-        return propositions[0].clone();
+        return find_sequence(&propositions, nb_words);
     } else {
         panic!("No solution found.");
     }
+}
+
+fn find_sequence(propositions: &Vec<String>, nb_words: &usize) -> String {
+    let sequence = propositions[0].clone();
+    let current_word_count = word_count(&sequence);
+    if current_word_count == *nb_words {
+        return sequence;
+    }
+
+    return add_spaces_in_sequence(&sequence, &(*nb_words - current_word_count));
 }
 
 fn display_possibilities(propositions: &Vec<String>) {
@@ -520,11 +530,30 @@ fn find_sentence(possibilities: &Vec<String>, dictionary: &HashMap<char, Vec<Str
 
 #[cfg(test)]
 mod tests {
-    use crate::challenge_resolve::solve_secret_string_challenge;
+    use crate::challenge_resolve::{
+        solve_secret_sentence_challenge, solve_secret_string_challenge,
+    };
+    use crate::file_utils::read_file;
     use crate::models::RecoverSecretInput;
+    use crate::string_utils::generate_dictionary_hashmap;
 
     #[test]
     fn test_solve_secret_sentence_challenge() {
+        let dictionary = read_file("data-test/liste-de-ses-morts.dic");
+        let dictionary_hashmap = generate_dictionary_hashmap(&dictionary);
+
+        let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+            word_count: 2,
+            letters: "C'echCt chut cou't htu'ehuest o".parse().unwrap(),
+            tuple_sizes: vec![5, 6, 5, 4, 2, 4, 5],
+        };
+
+        let answer = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
+        assert_eq!(answer.secret_sentence, "C'est chou".to_string());
+    }
+
+    #[test]
+    fn test_solve_secret_string_challenge() {
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 1,
             letters: "iffiiilfatroridato".parse().unwrap(),
@@ -536,7 +565,7 @@ mod tests {
     }
 
     #[test]
-    fn another_test_solve_secret_sentence_challenge() {
+    fn another_test_solve_secret_string_challenge() {
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 1,
             letters: "rtlthotzo".parse().unwrap(),
@@ -547,7 +576,7 @@ mod tests {
         assert_eq!(answer.secret_sentence, "rtlhzo".to_string());
     }
 
-    /*    #[test]
+    #[test]
     fn test_solve_secret_sentence_challenge_multiple_words() {
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 6,
@@ -555,7 +584,7 @@ mod tests {
             tuple_sizes: vec![3, 3, 3, 3, 3, 3],
         };
 
-        let answer = solve_secret_sentence_challenge(&recover_secret_input);
+        let answer = solve_secret_string_challenge(&recover_secret_input);
         assert_eq!(answer.secret_sentence, "i i r i f lfatrod".to_string());
-    }*/
+    }
 }

@@ -78,6 +78,36 @@ pub fn get_string_after_n_occurrence(
     new_string
 }
 
+pub fn get_string_before_sequence(string: &String, sequence: &String) -> String {
+    let mut new_string = String::new();
+    let index = find_sequence_utf8(string, sequence);
+
+    if index.is_some() {
+        new_string.push_str(&string[..index.unwrap()]);
+    }
+
+    // println!(
+    //     "String before sequence '{}': '{}' -> '{}'",
+    //     sequence, string, new_string
+    // );
+    new_string
+}
+
+pub fn get_string_after_sequence(string: &String, sequence: &String) -> String {
+    let mut new_string = String::new();
+    let index = find_sequence_utf8(string, sequence);
+
+    if index.is_some() {
+        new_string.push_str(&string[(index.unwrap() + sequence.len())..]);
+    }
+
+    // println!(
+    //     "String before sequence '{}': '{}' -> '{}'",
+    //     sequence, string, new_string
+    // );
+    new_string
+}
+
 pub fn get_string_before_n_occurrence(
     string: &String,
     character: &char,
@@ -173,6 +203,35 @@ pub fn find_utf8(s: &str, chr: char) -> Option<usize> {
     }
 }
 
+pub fn find_sequence_utf8(s: &str, sequence: &str) -> Option<usize> {
+    if let Some(pos) = s.find(sequence) {
+        Some(pos)
+    } else {
+        None
+    }
+}
+
+// add spaces in sequence string
+// space must be between two non-whitespace characters
+pub fn add_spaces_in_sequence(sequence: &str, nb_spaces: &usize) -> String {
+    let mut new_sequence = String::new();
+    let mut nb_spaces_left = *nb_spaces;
+    let mut last_char = ' ';
+    for (index, current_char) in sequence[..sequence.len() - 1].chars().enumerate() {
+        new_sequence.push(current_char);
+        if current_char == ' ' || sequence.chars().nth(index + 1).unwrap() == ' ' {
+            continue;
+        }
+
+        if nb_spaces_left > 0 {
+            new_sequence.push(' ');
+            nb_spaces_left -= 1;
+        }
+    }
+    new_sequence.push(sequence.chars().last().unwrap());
+    new_sequence
+}
+
 pub fn find_n_utf8(s: &str, chr: char, n: &usize) -> Option<usize> {
     let mut count = 0;
     let mut index = 0;
@@ -190,7 +249,12 @@ pub fn find_n_utf8(s: &str, chr: char, n: &usize) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use crate::string_utils::{add_char_at_index, get_string_after_first_occurrence, get_string_after_last_occurrence, get_string_after_n_occurrence, get_string_before_first_occurrence, get_string_before_last_occurrence, get_string_before_n_occurrence, is_present};
+    use crate::string_utils::{
+        add_char_at_index, add_spaces_in_sequence, get_string_after_first_occurrence,
+        get_string_after_last_occurrence, get_string_after_n_occurrence, get_string_after_sequence,
+        get_string_before_first_occurrence, get_string_before_last_occurrence,
+        get_string_before_n_occurrence, get_string_before_sequence, is_present,
+    };
 
     #[test]
     fn test_is_present() {
@@ -290,5 +354,37 @@ mod tests {
         assert_eq!(not_found_string, "zz".to_string());
         let empty_string = get_string_before_n_occurrence(&"z".to_string(), &'z', &2);
         assert_eq!(empty_string, "".to_string());
+    }
+
+    #[test]
+    fn test_get_string_before_sequence() {
+        let string = "hello world".to_string();
+        let new_string = get_string_before_sequence(&string, &"world".to_string());
+        assert_eq!(new_string, "hello ".to_string());
+        let not_found_string = get_string_before_sequence(&string, &"zzzzz".to_string());
+        assert_eq!(not_found_string, "".to_string());
+        let empty_string = get_string_before_sequence(&"z".to_string(), &"z".to_string());
+        assert_eq!(empty_string, "".to_string());
+    }
+
+    #[test]
+    fn test_get_string_after_sequence() {
+        let string = "hello world".to_string();
+        let new_string = get_string_after_sequence(&string, &"hello".to_string());
+        assert_eq!(new_string, " world".to_string());
+        let not_found_string = get_string_after_sequence(&string, &"zzzzz".to_string());
+        assert_eq!(not_found_string, "".to_string());
+        let empty_string = get_string_after_sequence(&"z".to_string(), &"z".to_string());
+        assert_eq!(empty_string, "".to_string());
+    }
+
+    #[test]
+    fn test_add_spaces_in_sequence() {
+        let new_string = add_spaces_in_sequence(&"hello world", &1);
+        assert_eq!(new_string, "h ello world".to_string());
+        let new_string = add_spaces_in_sequence(&"hello world", &0);
+        assert_eq!(new_string, "hello world".to_string());
+        let new_string = add_spaces_in_sequence(&"hello world", &6);
+        assert_eq!(new_string, "h e l l o w o rld".to_string());
     }
 }
