@@ -46,6 +46,10 @@ impl Hashcash {
         }
         workers_result.unwrap()
     }
+
+    pub fn verify(hash: String, complexity: u32) -> bool {
+        check_hash(complexity, hash)
+    }
 }
 
 #[cfg(test)]
@@ -72,7 +76,7 @@ mod tests {
     #[test]
     fn test_hashcash_with_high_complexity() {
         let message = "Bonjour monde".to_string();
-        let complexity = 24;
+        let complexity = 14;
         let output = Hashcash::solve(message.clone(), complexity);
         assert!(check_hash(complexity, output.hashcode));
     }
