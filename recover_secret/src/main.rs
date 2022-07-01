@@ -4,6 +4,7 @@ use recover_secret::challenge_resolve::{
 use recover_secret::file_utils::read_file;
 use recover_secret::models::RecoverSecretInput;
 use recover_secret::string_utils::generate_dictionary_hashmap;
+use std::time::Instant;
 
 fn main() {
     println!("Reading dictionary file...");
@@ -20,8 +21,10 @@ fn main() {
     };
 
     println!("Solving challenge 1 (true sentence)...\n{:?}", recover_secret_input);
+    let i = Instant::now();
     let output = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
     println!("{:?}", output);
+    println!("{:?}", i.elapsed());
 
     let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
         word_count: 1,
@@ -30,8 +33,10 @@ fn main() {
     };
 
     println!("\nSolving challenge 2 (random string)...\n{:?}", recover_secret_input);
+        let i = Instant::now();
     let output = solve_secret_string_challenge(&recover_secret_input);
     println!("{:?}", output);
+    println!("{:?}", i.elapsed());
 
     let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
         word_count: 1,
@@ -39,8 +44,10 @@ fn main() {
         tuple_sizes: vec![3, 3, 3],
     };
     println!("\nSolving challenge 3 (random string)...\n{:?}", recover_secret_input);
+        let i = Instant::now();
     let output = solve_secret_string_challenge(&recover_secret_input);
     println!("{:?}", output);
+    println!("{:?}", i.elapsed());
 
     let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
         word_count: 6,
@@ -48,8 +55,10 @@ fn main() {
         tuple_sizes: vec![3, 3, 3, 3, 3, 3],
     };
     println!("\nSolving challenge 4 (random string)...\n{:?}", recover_secret_input);
+        let i = Instant::now();
     let output = solve_secret_string_challenge(&recover_secret_input);
     println!("{:?}", output);
+    println!("{:?}", i.elapsed());
 
     let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
         word_count: 3,
@@ -58,6 +67,9 @@ fn main() {
     };
 
     println!("\nSolving challenge 5 (true sentence)...\n{:?}", recover_secret_input);
+        let i = Instant::now();
     let output = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
     println!("{:?}", output);
+    println!("{:?}", i.elapsed());
+
 }
