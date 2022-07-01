@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use crate::models::{RecoverSecretInput, RecoverSecretOutput};
 use crate::string_utils::{
     add_char_at_index, add_spaces_in_sequence, get_string_after_first_occurrence,
-    get_string_after_last_occurrence, get_string_after_n_occurrence,
+    get_string_after_last_occurrence, get_string_after_n_occurrence, get_string_after_vec_sequence,
     get_string_before_first_occurrence, get_string_before_last_occurrence,
-    get_string_before_n_occurrence, is_present, is_word_in_dictionary, word_count,
+    get_string_before_n_occurrence, get_string_before_sequence, get_string_before_vec_sequence,
+    get_string_before_vec_sequence_inclusive, is_present, is_word_in_dictionary, word_count,
 };
 
 pub fn solve_secret_sentence_challenge(
@@ -175,7 +176,6 @@ fn retrieve_possible_strings_from_string(
             }
             _ => {
                 // middle element, there is at least one element before and one element after
-
                 process_middle_element_of_tuple(
                     tuple,
                     &nb_words,
@@ -209,6 +209,8 @@ fn process_middle_element_of_tuple(
         let mut new_proposition: String;
         let is_current_char_present;
         let is_previous_char_present = is_present(proposition, previous_char);
+        let previous_sequence: Vec<char> = tuple.iter().take(index).map(|c| *c).collect();
+
         let is_next_char_present;
 
         if is_previous_char_present {
@@ -277,23 +279,14 @@ fn process_last_element_of_tuple(
     mut new_propositions: &mut Vec<String>,
     compute_all_possibilities: &bool,
 ) {
-    let previous_char = tuple.get(index - 1).unwrap();
+    let previous_sequence: Vec<char> = tuple.iter().take(index).map(|c| *c).collect();
 
     propositions.iter().for_each(|proposition| {
         let mut new_proposition: String;
-        let is_previous_char_present = is_present(proposition, previous_char);
+        // let is_previous_char_present = is_present(proposition, previous_char);
         let is_current_char_present;
-        let mut previous_char_occurrence = tuple.iter().filter(|&c| c == previous_char).count();
-        if previous_char == current_char {
-            previous_char_occurrence -= 1;
-        }
 
-        // if is_previous_char_present {
-        new_proposition =
-            get_string_after_n_occurrence(proposition, previous_char, &previous_char_occurrence);
-        // } else {
-        //     new_proposition = proposition.clone();
-        // }
+        new_proposition = get_string_after_vec_sequence(proposition, &previous_sequence);
 
         is_current_char_present = is_present(&new_proposition, current_char);
 
@@ -303,9 +296,7 @@ fn process_last_element_of_tuple(
                     let final_proposition = add_char_at_index(&new_proposition, &current_char, &i);
                     push_proposition_with_string_before_char(
                         &mut new_propositions,
-                        previous_char,
-                        &is_previous_char_present,
-                        &previous_char_occurrence,
+                        &previous_sequence,
                         proposition,
                         &final_proposition,
                         &nb_words,
@@ -315,9 +306,7 @@ fn process_last_element_of_tuple(
                 new_proposition.push(*current_char);
                 push_proposition_with_string_before_char(
                     &mut new_propositions,
-                    previous_char,
-                    &is_previous_char_present,
-                    &previous_char_occurrence,
+                    &previous_sequence,
                     proposition,
                     &new_proposition,
                     &nb_words,
@@ -327,9 +316,7 @@ fn process_last_element_of_tuple(
         } else {
             push_proposition_with_string_before_char(
                 &mut new_propositions,
-                previous_char,
-                &is_previous_char_present,
-                &previous_char_occurrence,
+                &previous_sequence,
                 proposition,
                 &new_proposition,
                 &nb_words,
@@ -350,47 +337,88 @@ fn process_first_element_of_tuple(
 ) {
     if tuple_length > 1 {
         // there is at least one element after
-        let next_char = tuple.get(index + 1).unwrap();
+        process_first_element_of_tuple_more_than_one_element(
+            tuple,
+            nb_words,
+            propositions,
+            index,
+            current_char,
+            new_propositions,
+            compute_all_possibilities,
+        );
+    } else {
+        // single tuple, insert wherever we want if not present
+        process_first_element_of_tuple_one_element(
+            propositions,
+            current_char,
+            new_propositions,
+            compute_all_possibilities,
+        );
+    }
+}
 
-        propositions.iter().for_each(|proposition| {
-            let mut new_proposition: String;
-            let is_next_char_present = is_present(proposition, next_char);
-            let is_current_char_present;
-
-            if !is_next_char_present {
-                new_proposition = proposition.clone();
+fn process_first_element_of_tuple_one_element(
+    propositions: &Vec<String>,
+    current_char: &char,
+    new_propositions: &mut Vec<String>,
+    compute_all_possibilities: &bool,
+) {
+    propositions.iter().for_each(|proposition| {
+        let mut new_proposition = proposition.clone();
+        if !is_present(&new_proposition, current_char) {
+            if *compute_all_possibilities {
+                for i in 0..new_proposition.len() + 1 {
+                    new_propositions.push(add_char_at_index(&new_proposition, current_char, &i))
+                }
             } else {
-                new_proposition = get_string_before_last_occurrence(proposition, next_char);
+                new_proposition.push(*current_char);
+                new_propositions.push(new_proposition);
             }
+        } else {
+            new_propositions.push(new_proposition);
+        }
+    });
+}
 
-            is_current_char_present = is_present(&new_proposition, current_char);
+fn process_first_element_of_tuple_more_than_one_element(
+    tuple: &Vec<char>,
+    nb_words: &usize,
+    propositions: &Vec<String>,
+    index: usize,
+    current_char: &char,
+    mut new_propositions: &mut Vec<String>,
+    compute_all_possibilities: &bool,
+) {
+    let next_char = tuple.get(index + 1).unwrap();
 
-            if !is_current_char_present {
-                if *compute_all_possibilities {
-                    for i in 0..new_proposition.len() + 1 {
-                        let final_proposition =
-                            add_char_at_index(&new_proposition, &current_char, &i);
-                        push_proposition_with_string_after_char(
-                            &mut new_propositions,
-                            &next_char,
-                            &is_next_char_present,
-                            &proposition,
-                            &final_proposition,
-                            &nb_words,
-                        );
-                    }
-                } else {
-                    new_proposition.push(*current_char);
+    propositions.iter().for_each(|proposition| {
+        let mut new_proposition: String;
+        let is_next_char_present = is_present(proposition, next_char);
+        let is_current_char_present;
+
+        if !is_next_char_present {
+            new_proposition = proposition.clone();
+        } else {
+            new_proposition = get_string_before_last_occurrence(proposition, next_char);
+        }
+
+        is_current_char_present = is_present(&new_proposition, current_char);
+
+        if !is_current_char_present {
+            if *compute_all_possibilities {
+                for i in 0..new_proposition.len() + 1 {
+                    let final_proposition = add_char_at_index(&new_proposition, &current_char, &i);
                     push_proposition_with_string_after_char(
                         &mut new_propositions,
                         &next_char,
                         &is_next_char_present,
                         &proposition,
-                        &new_proposition,
+                        &final_proposition,
                         &nb_words,
                     );
                 }
             } else {
+                new_proposition.push(*current_char);
                 push_proposition_with_string_after_char(
                     &mut new_propositions,
                     &next_char,
@@ -400,35 +428,17 @@ fn process_first_element_of_tuple(
                     &nb_words,
                 );
             }
-        });
-    } else {
-        // single tuple, insert wherever we want if not present
-        propositions.iter().for_each(|proposition| {
-            let mut new_proposition = proposition.clone();
-            if new_proposition.len() == 0 {
-                new_proposition.push(*current_char);
-                new_propositions.push(new_proposition);
-            } else {
-                if !is_present(&new_proposition, current_char) {
-                    if *compute_all_possibilities {
-                        for i in 0..new_proposition.len() + 1 {
-                            new_propositions.push(add_char_at_index(
-                                &new_proposition,
-                                current_char,
-                                &i,
-                            ))
-                        }
-                    } else {
-                        new_proposition.push(*current_char);
-                        new_propositions.push(new_proposition);
-                    }
-                } else {
-                    // println!("'{}' -> '{}'", proposition, new_proposition);
-                    new_propositions.push(new_proposition);
-                }
-            }
-        });
-    }
+        } else {
+            push_proposition_with_string_after_char(
+                &mut new_propositions,
+                &next_char,
+                &is_next_char_present,
+                &proposition,
+                &new_proposition,
+                &nb_words,
+            );
+        }
+    });
 }
 
 fn push_proposition_with_string_between_chars(
@@ -462,24 +472,15 @@ fn push_proposition_with_string_between_chars(
 
 fn push_proposition_with_string_before_char(
     new_propositions: &mut Vec<String>,
-    previous_char: &char,
-    is_previous_char_present: &bool,
-    previous_char_occurrence: &usize,
+    previous_sequence: &Vec<char>,
     proposition: &String,
     new_proposition: &String,
     nb_words: &usize,
 ) {
-    let final_proposition;
+    let mut final_proposition =
+        get_string_before_vec_sequence_inclusive(proposition, &previous_sequence);
 
-    if *is_previous_char_present {
-        let mut tmp =
-            get_string_before_n_occurrence(proposition, previous_char, previous_char_occurrence);
-        tmp.push(*previous_char);
-        tmp.push_str(&new_proposition);
-        final_proposition = tmp;
-    } else {
-        final_proposition = new_proposition.clone();
-    }
+    final_proposition.push_str(new_proposition);
     // println!("'{}' -> '{}'", proposition, final_proposition);
     if word_count(&final_proposition) <= *nb_words {
         new_propositions.push(final_proposition);

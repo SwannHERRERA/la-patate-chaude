@@ -108,6 +108,42 @@ pub fn get_string_after_sequence(string: &String, sequence: &String) -> String {
     new_string
 }
 
+pub fn get_string_after_vec_sequence(string: &String, sequence: &Vec<char>) -> String {
+    let mut new_string = string.clone();
+
+    for char_sequence in sequence {
+        new_string = get_string_after_first_occurrence(&new_string, char_sequence);
+    }
+
+    new_string
+}
+
+pub fn get_string_before_vec_sequence(string: &String, sequence: &Vec<char>) -> String {
+    let mut new_string = string.clone();
+
+    for char_sequence in sequence.clone().iter().rev() {
+        new_string = get_string_before_last_occurrence(&new_string, char_sequence);
+    }
+
+    new_string
+}
+
+pub fn get_string_before_vec_sequence_inclusive(string: &String, sequence: &Vec<char>) -> String {
+    let after_string = get_string_after_vec_sequence(string, sequence);
+    if after_string.len() == 0 {
+        return string.clone();
+    }
+    get_string_before_sequence(string, &after_string)
+}
+
+pub fn get_string_after_vec_sequence_inclusive(string: &String, sequence: &Vec<char>) -> String {
+    let before_string = get_string_before_vec_sequence(string, sequence);
+    if before_string.len() == 0 {
+        return string.clone();
+    }
+    get_string_after_sequence(string, &before_string)
+}
+
 pub fn get_string_before_n_occurrence(
     string: &String,
     character: &char,
@@ -252,8 +288,10 @@ mod tests {
     use crate::string_utils::{
         add_char_at_index, add_spaces_in_sequence, get_string_after_first_occurrence,
         get_string_after_last_occurrence, get_string_after_n_occurrence, get_string_after_sequence,
+        get_string_after_vec_sequence, get_string_after_vec_sequence_inclusive,
         get_string_before_first_occurrence, get_string_before_last_occurrence,
-        get_string_before_n_occurrence, get_string_before_sequence, is_present,
+        get_string_before_n_occurrence, get_string_before_sequence, get_string_before_vec_sequence,
+        get_string_before_vec_sequence_inclusive, is_present,
     };
 
     #[test]
@@ -376,6 +414,71 @@ mod tests {
         assert_eq!(not_found_string, "".to_string());
         let empty_string = get_string_after_sequence(&"z".to_string(), &"z".to_string());
         assert_eq!(empty_string, "".to_string());
+    }
+
+    #[test]
+    fn test_get_string_after_vec_sequence() {
+        let new_string = get_string_after_vec_sequence(&"hello world".to_string(), &vec!['h', 'o']);
+        assert_eq!(new_string, " world".to_string());
+        let new_string = get_string_after_vec_sequence(&"hello world".to_string(), &vec!['h', ' ']);
+        assert_eq!(new_string, "world".to_string());
+        let new_string =
+            get_string_after_vec_sequence(&"hello world".to_string(), &vec!['h', ' ', 'o']);
+        assert_eq!(new_string, "rld".to_string());
+        let new_string =
+            get_string_after_vec_sequence(&"hello world".to_string(), &vec!['h', ' ', 'd']);
+        assert_eq!(new_string, "".to_string());
+    }
+
+    #[test]
+    fn test_get_string_before_vec_sequence() {
+        let new_string =
+            get_string_before_vec_sequence(&"hello world".to_string(), &vec!['o', 'o']);
+        assert_eq!(new_string, "hell".to_string());
+        let new_string =
+            get_string_before_vec_sequence(&"hello world".to_string(), &vec![' ', 'o']);
+        assert_eq!(new_string, "hello".to_string());
+        let new_string = get_string_before_vec_sequence(&"hello world".to_string(), &vec!['o']);
+        assert_eq!(new_string, "hello w".to_string());
+        let new_string =
+            get_string_before_vec_sequence(&"hello world".to_string(), &vec!['h', ' ', 'd']);
+        assert_eq!(new_string, "".to_string());
+    }
+
+    #[test]
+    fn test_get_string_before_vec_sequence_inclusive() {
+        let new_string =
+            get_string_before_vec_sequence_inclusive(&"hello world".to_string(), &vec!['o', 'o']);
+        assert_eq!(new_string, "hello wo".to_string());
+        let new_string =
+            get_string_before_vec_sequence_inclusive(&"hello world".to_string(), &vec!['o', ' ']);
+        assert_eq!(new_string, "hello ".to_string());
+        let new_string =
+            get_string_before_vec_sequence_inclusive(&"hello world".to_string(), &vec!['o']);
+        assert_eq!(new_string, "hello".to_string());
+        let new_string = get_string_before_vec_sequence_inclusive(
+            &"hello world".to_string(),
+            &vec!['h', ' ', 'd'],
+        );
+        assert_eq!(new_string, "hello world".to_string());
+    }
+
+    #[test]
+    fn test_get_string_after_vec_sequence_inclusive() {
+        let new_string =
+            get_string_after_vec_sequence_inclusive(&"hello world".to_string(), &vec!['o', 'o']);
+        assert_eq!(new_string, "o world".to_string());
+        let new_string =
+            get_string_after_vec_sequence_inclusive(&"hello world".to_string(), &vec![' ', 'o']);
+        assert_eq!(new_string, " world".to_string());
+        let new_string =
+            get_string_after_vec_sequence_inclusive(&"hello world".to_string(), &vec!['o', ' ']);
+        assert_eq!(new_string, "o world".to_string());
+        let new_string = get_string_after_vec_sequence_inclusive(
+            &"hello world".to_string(),
+            &vec!['h', ' ', 'd'],
+        );
+        assert_eq!(new_string, "hello world".to_string());
     }
 
     #[test]
