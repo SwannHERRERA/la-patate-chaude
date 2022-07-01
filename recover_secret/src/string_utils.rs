@@ -2,38 +2,25 @@ use std::collections::HashMap;
 
 pub fn get_string_after_last_occurrence(string: &String, character: &char) -> String {
     let mut new_string = String::new();
-    let mut index: i32 = (string.len() as i32) - 1;
+    let index = rfind_utf8(string, *character);
 
-    while index >= 0 && string.chars().nth(index as usize).unwrap() != *character {
-        index -= 1;
-    }
-
-    if index >= 0 {
-        for i in index + 1..(string.len() as i32) {
-            new_string.push(string.chars().nth(i as usize).unwrap())
-        }
+    if index.is_some() {
+        new_string.push_str(&string[(index.unwrap() + 1)..]);
     }
     // println!(
     //     "String after last occ '{}': '{}' -> '{}'",
     //     character, string, new_string
     // );
-
     new_string
 }
 
 // return string before last occurrence of character
 pub fn get_string_before_last_occurrence(string: &String, character: &char) -> String {
     let mut new_string = String::new();
-    let mut found_index: i32 = (string.len() - 1) as i32;
+    let index = rfind_utf8(string, *character);
 
-    while found_index >= 0 && string.chars().nth(found_index as usize).unwrap() != *character {
-        found_index -= 1;
-    }
-
-    if found_index >= 0 {
-        for i in 0..found_index {
-            new_string.push(string.chars().nth(i as usize).unwrap())
-        }
+    if index.is_some() {
+        new_string.push_str(&string[..index.unwrap()]);
     }
     // println!(
     //     "String before last occ '{}': '{}' -> '{}'",
@@ -44,14 +31,10 @@ pub fn get_string_before_last_occurrence(string: &String, character: &char) -> S
 
 pub fn get_string_before_first_occurrence(string: &String, character: &char) -> String {
     let mut new_string = String::new();
+    let index = find_utf8(string, *character);
 
-    if is_present(string, character) {
-        for i in 0..string.len() {
-            if string.chars().nth(i).unwrap() == *character {
-                break;
-            }
-            new_string.push(string.chars().nth(i).unwrap());
-        }
+    if index.is_some() {
+        new_string.push_str(&string[..index.unwrap()]);
     }
 
     // println!(
@@ -63,13 +46,12 @@ pub fn get_string_before_first_occurrence(string: &String, character: &char) -> 
 
 pub fn get_string_after_first_occurrence(string: &String, character: &char) -> String {
     let mut new_string = String::new();
-    let option_index = string.chars().position(|c| c == *character);
-    if option_index.is_some() {
-        let index = option_index.unwrap();
-        for c in string.chars().skip(index + 1) {
-            new_string.push(c);
-        }
+    let index = find_utf8(string, *character);
+
+    if index.is_some() {
+        new_string.push_str(&string[(index.unwrap() + 1)..]);
     }
+
     // println!(
     //     "String after first occ '{}': '{}' -> '{}'",
     //     character, string, new_string
@@ -86,12 +68,9 @@ pub fn add_char_at_index(string: &String, character: &char, index: &usize) -> St
         new_string.push_str(string);
         new_string.push(*character);
     } else {
-        for i in 0..string.len() {
-            if i == *index {
-                new_string.push(*character);
-            }
-            new_string.push(string.chars().nth(i).unwrap());
-        }
+        new_string.push_str(&string[..*index]);
+        new_string.push(*character);
+        new_string.push_str(&string[*index..]);
     }
     // println!(
     //     "String after adding char at index '{}': '{}' -> '{}'",
@@ -140,6 +119,22 @@ pub fn is_word_in_dictionary(word: &String, dictionary: &HashMap<char, Vec<Strin
     false
 }
 
+pub fn rfind_utf8(s: &str, chr: char) -> Option<usize> {
+    if let Some(rev_pos) = s.chars().rev().position(|c| c == chr) {
+        Some(s.chars().count() - rev_pos - 1)
+    } else {
+        None
+    }
+}
+
+pub fn find_utf8(s: &str, chr: char) -> Option<usize> {
+    if let Some(pos) = s.chars().position(|c| c == chr) {
+        Some(pos)
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::string_utils::{
@@ -161,6 +156,10 @@ mod tests {
         assert_eq!(new_string, "rld".to_string());
         let not_found_string = get_string_after_last_occurrence(&string, &'z');
         assert_eq!(not_found_string, "".to_string());
+        let empty_string = get_string_after_last_occurrence(&"".to_string(), &'z');
+        assert_eq!(empty_string, "".to_string());
+        let empty_string_2 = get_string_after_last_occurrence(&"z".to_string(), &'z');
+        assert_eq!(empty_string_2, "".to_string());
     }
 
     #[test]
@@ -170,6 +169,8 @@ mod tests {
         assert_eq!(new_string, "hello w".to_string());
         let not_found_string = get_string_before_last_occurrence(&string, &'z');
         assert_eq!(not_found_string, "".to_string());
+        let empty_string = get_string_before_last_occurrence(&"z".to_string(), &'z');
+        assert_eq!(empty_string, "".to_string());
     }
 
     #[test]
