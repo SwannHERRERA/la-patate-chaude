@@ -1,7 +1,14 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
-use hashcash::{dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput}, hashcash::Hashcash};
-use recover_secret::challenge_resolve::{solve_secret_sentence_challenge, solve_secret_string_challenge};
+use hashcash::{
+    dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput},
+    hashcash::Hashcash,
+};
+use recover_secret::challenge_resolve::{
+    solve_secret_sentence_challenge, solve_secret_string_challenge,
+};
 use recover_secret::models::{RecoverSecret, RecoverSecretInput, RecoverSecretOutput};
 
 pub trait Challenge {
@@ -17,6 +24,10 @@ pub trait Challenge {
     fn solve(&self) -> Self::Output;
     /// Vérifie qu'une sortie est valide pour le challenge
     fn verify(&self, answer: Self::Output) -> bool;
+}
+
+pub trait DictionaryChallenge: Challenge {
+    fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output;
 }
 
 impl Challenge for MD5HashCash {
@@ -40,6 +51,12 @@ impl Challenge for MD5HashCash {
     }
 }
 
+impl DictionaryChallenge for RecoverSecret {
+    fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output {
+        solve_secret_sentence_challenge(&self.0, dictionary_hashmap)
+    }
+}
+
 impl Challenge for RecoverSecret {
     type Input = RecoverSecretInput;
     type Output = RecoverSecretOutput;
@@ -60,7 +77,6 @@ impl Challenge for RecoverSecret {
         todo!()
     }
 }
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ChallengeAnswer {
