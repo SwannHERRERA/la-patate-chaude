@@ -1,5 +1,3 @@
-mod strategies;
-
 use std::{io::{Read, Write}, net::TcpStream, thread};
 use std::net::{Shutdown, SocketAddr};
 use std::sync::mpsc;
@@ -17,7 +15,10 @@ use shared::config::{IP, PORT};
 use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
 use shared::subscribe::SubscribeResult;
+
 use crate::strategies::{BottomTargetStrategy, RandomTargetStrategy, TargetStrategy, TargetStrategyType, TopTargetStrategy};
+
+mod strategies;
 
 fn main() {
     std::env::set_var("RUST_LOG", config::LOG_LEVEL);
@@ -151,14 +152,4 @@ impl Client {
             }
         });
     }
-}
-
-fn select_next_user(username: String, public_leader_board: &mut PublicLeaderBoard) -> String {
-    public_leader_board.sort_by(|a, b| b.score.cmp(&a.score));
-    for player in public_leader_board {
-        if player.name != username && player.is_active {
-            return player.name.clone();
-        }
-    }
-    "".to_string()
 }
