@@ -15,8 +15,7 @@ use rand;
 use rand::Rng;
 
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType, DictionaryChallenge};
-use shared::config;
-use shared::config::{IP, PORT};
+use shared::config::{IP, LOG_LEVEL, PORT};
 use shared::message::Message::ChallengeResult;
 use shared::message::{Message, PublicLeaderBoard};
 use shared::subscribe::SubscribeResult;
