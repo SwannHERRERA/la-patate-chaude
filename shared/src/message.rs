@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     public_player::PublicPlayer,
-    challenge::{ChallengeAnswer, ReportedChallengeResult, ChallengeType}, subscribe::SubscribeResult
+    challenge::{ChallengeAnswer, ReportedChallengeResult, ChallengeType}, subscribe::SubscribeResult,
 };
 
 pub type PublicLeaderBoard = Vec<PublicPlayer>;
@@ -27,17 +27,17 @@ pub enum Message {
         challenge: String,
         chain: Vec<ReportedChallengeResult>,
     },
-  StartGame {},
+    StartGame {},
     EndOfGame {
         leader_board: Vec<PublicPlayer>,
     },
-  EndOfCommunication,
+    EndOfCommunication,
 }
 
 #[derive(Debug, Clone)]
 pub enum ResponseType {
-  Broadcast,
-  Unicast,
+    Broadcast,
+    Unicast,
 }
 
 #[derive(Debug, Clone)]

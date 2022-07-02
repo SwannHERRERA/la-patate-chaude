@@ -5,7 +5,7 @@ use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::thread;
 
-use crate::config::NTHREADS;
+use crate::config::{NTHREADS, THREAD_SEED_ATTRIBUTION};
 use crate::dto::MD5HashCashOutput;
 use crate::utils::check_hash;
 
@@ -22,20 +22,19 @@ impl Hashcash {
             let is_solved = is_solved.clone();
             let message = message.clone();
             thread::spawn(move || {
-                loop {
-                    if is_solved.load(Ordering::Relaxed) {
-                        break;
-                    }
-                    let seed = seed_counter.fetch_add(1, Ordering::Relaxed);
-                    let hash = md5::compute(format!("{:016X}", seed) + &message);
-                    let md5 = format!("{:032X}", hash);
-                    if !check_hash(complexity, md5.clone()) {
-                        continue;
-                    }
-                    is_solved.store(true, Ordering::Relaxed);
-                    let result = worker_tx.send(MD5HashCashOutput { seed, hashcode: md5.to_string() });
-                    if result.is_err() {
-                        break;
+                'outer: loop {
+                    let seed = seed_counter.fetch_add(THREAD_SEED_ATTRIBUTION, Ordering::Relaxed);
+                    for seed in seed..seed + THREAD_SEED_ATTRIBUTION {
+                        if is_solved.load(Ordering::Relaxed) {
+                            break 'outer;
+                        }
+                        let hash = md5::compute(format!("{:016X}", seed) + &message);
+                        let md5 = format!("{:032X}", hash);
+                        if !check_hash(complexity, md5.clone()) {
+                            continue;
+                        }
+                        worker_tx.send(MD5HashCashOutput { seed, hashcode: md5.to_string() }).expect("Error while sending answer to main thread");
+                        is_solved.store(true, Ordering::Relaxed);
                     }
                 }
             });
@@ -46,12 +45,17 @@ impl Hashcash {
         }
         workers_result.unwrap()
     }
+
+    pub fn verify(hash: String, complexity: u32) -> bool {
+        check_hash(complexity, hash)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::utils::check_hash;
+
+    use super::*;
 
     #[test]
     fn test_hashcash() {
@@ -72,7 +76,7 @@ mod tests {
     #[test]
     fn test_hashcash_with_high_complexity() {
         let message = "Bonjour monde".to_string();
-        let complexity = 24;
+        let complexity = 14;
         let output = Hashcash::solve(message.clone(), complexity);
         assert!(check_hash(complexity, output.hashcode));
     }
