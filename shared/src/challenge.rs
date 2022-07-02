@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use hashcash::{dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput}, hashcash::Hashcash};
-use recover_secret::challenge_resolve::solve_secret_sentence_challenge;
+use recover_secret::challenge_resolve::{solve_secret_sentence_challenge, solve_secret_string_challenge};
 use recover_secret::models::{RecoverSecret, RecoverSecretInput, RecoverSecretOutput};
 
 pub trait Challenge {
@@ -53,7 +53,7 @@ impl Challenge for RecoverSecret {
     }
 
     fn solve(&self) -> Self::Output {
-        solve_secret_sentence_challenge(&self.0)
+        solve_secret_string_challenge(&self.0)
     }
 
     fn verify(&self, _: Self::Output) -> bool {
