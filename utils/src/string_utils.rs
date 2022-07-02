@@ -218,7 +218,7 @@ pub fn is_word_in_dictionary(word: &String, dictionary: &HashMap<char, Vec<Strin
     let first_char = word.chars().next().unwrap();
     if dictionary.contains_key(&first_char) {
         let word_vec = dictionary.get(&first_char).unwrap();
-        return word_vec.iter().any(|w| w == word);
+        return word_vec.contains(word);
     }
     false
 }
@@ -255,8 +255,6 @@ pub fn rfind_sequence_utf8(s: &str, sequence: &str) -> Option<usize> {
     }
 }
 
-// add spaces in sequence string
-// space must be between two non-whitespace characters
 pub fn add_spaces_in_sequence(sequence: &str, nb_spaces: &usize) -> String {
     let mut new_sequence = String::new();
     let mut nb_spaces_left = *nb_spaces;
