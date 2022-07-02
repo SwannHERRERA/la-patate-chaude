@@ -1,10 +1,11 @@
+use std::time::Instant;
+
 use recover_secret::challenge_resolve::{
     solve_secret_sentence_challenge, solve_secret_string_challenge,
 };
-use recover_secret::file_utils::read_file;
 use recover_secret::models::RecoverSecretInput;
-use recover_secret::string_utils::generate_dictionary_hashmap;
-use std::time::Instant;
+use utils::file_utils::read_file;
+use utils::string_utils::generate_dictionary_hashmap;
 
 fn main() {
     println!("Reading dictionary file...");

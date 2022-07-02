@@ -1,16 +1,18 @@
 use std::collections::HashMap;
 
-use crate::models::{RecoverSecretInput, RecoverSecretOutput};
-use crate::string_utils::{
+use utils::string_utils::{
     add_char_at_index, add_spaces_in_sequence, get_string_after_last_occurrence,
     get_string_after_vec_sequence, get_string_before_last_occurrence,
     get_string_before_vec_sequence_inclusive, is_present, is_word_in_dictionary, word_count,
 };
 
+use crate::models::{RecoverSecretInput, RecoverSecretOutput};
+
 pub fn solve_secret_sentence_challenge(
     input: &RecoverSecretInput,
     dictionary: &HashMap<char, Vec<String>>,
 ) -> RecoverSecretOutput {
+    // println!("Solving challenge...\n{:?}", input);
     let mut tuples = retrieve_tuples_from_letters(&input);
     let secret_sentence =
         retrieve_secret_sentence_from_tuples(&mut tuples, &input.word_count, dictionary, &true);
@@ -18,6 +20,7 @@ pub fn solve_secret_sentence_challenge(
 }
 
 pub fn solve_secret_string_challenge(input: &RecoverSecretInput) -> RecoverSecretOutput {
+    println!("Solving challenge...\n{:?}", input);
     let mut tuples = retrieve_tuples_from_letters(&input);
     let secret_sentence = retrieve_secret_sentence_from_tuples(
         &mut tuples,
