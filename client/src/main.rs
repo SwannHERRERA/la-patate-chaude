@@ -19,19 +19,27 @@ use shared::config::{IP, LOG_LEVEL, PORT};
 use shared::message::Message::ChallengeResult;
 use shared::message::{Message, PublicLeaderBoard};
 use shared::subscribe::SubscribeResult;
-use utils::file_utils::read_file;
+use utils::file_utils::{read_file, read_file_macro};
 use utils::string_utils::generate_dictionary_hashmap;
 
-use crate::strategies::{BottomTargetStrategy, RandomTargetStrategy, TargetStrategy, TargetStrategyType, TopTargetStrategy};
+use crate::strategies::{
+    BottomTargetStrategy, RandomTargetStrategy, TargetStrategy, TargetStrategyType,
+    TopTargetStrategy,
+};
 
 mod strategies;
 
 fn main() {
     std::env::set_var("RUST_LOG", LOG_LEVEL);
     let address = SocketAddr::from((IP, PORT));
+
+    // Retrieve start args
+    let args: Vec<String> = std::env::args().collect();
+    let load_dictionary = args.contains(&"--dictionary".to_string());
+
     match TcpStream::connect(address) {
         Ok(stream) => {
-            let client = Client::new(false);
+            let client = Client::new(load_dictionary);
             client.start_threads(stream);
         }
         Err(_) => panic!("Could not connect to server {:?} on port {}", IP, PORT),
@@ -70,7 +78,7 @@ impl Client {
         let dictionary_hashmap;
         if load_dictionary {
             println!("Reading dictionary file...");
-            let dictionary = read_file("data/liste-de-ses-morts.dic");
+            let dictionary = read_file_macro();
             println!("Generating hashmap...");
             dictionary_hashmap = Some(generate_dictionary_hashmap(&dictionary));
             println!("Done !");
@@ -78,11 +86,19 @@ impl Client {
             dictionary_hashmap = None;
         }
 
-        let next_target_strategy= match rng.gen_range(0..=2) {
-            0 => TargetStrategyType::TopTargetStrategy(TopTargetStrategy { current_name: username.clone() }),
-            1 => TargetStrategyType::BottomTargetStrategy(BottomTargetStrategy { current_name: username.clone() }),
-            2 => TargetStrategyType::RandomTargetStrategy(RandomTargetStrategy { current_name: username.clone() }),
-            _ => {panic!()}
+        let next_target_strategy = match rng.gen_range(0..=2) {
+            0 => TargetStrategyType::TopTargetStrategy(TopTargetStrategy {
+                current_name: username.clone(),
+            }),
+            1 => TargetStrategyType::BottomTargetStrategy(BottomTargetStrategy {
+                current_name: username.clone(),
+            }),
+            2 => TargetStrategyType::RandomTargetStrategy(RandomTargetStrategy {
+                current_name: username.clone(),
+            }),
+            _ => {
+                panic!()
+            }
         };
         println!("Selected strategy : {:?}", next_target_strategy);
         debug!("Selected strategy : {:?}", next_target_strategy);
@@ -138,12 +154,23 @@ impl Client {
             Message::Challenge(challenge) => {
                 let challenge_answer = solve_challenge(challenge, &self.dictionary_hashmap);
                 let next_target = match self.next_target_strategy.clone() {
-                    TargetStrategyType::RandomTargetStrategy(strategy) => {strategy.next_target(self.public_leader_board.clone())}
-                    TargetStrategyType::TopTargetStrategy(strategy) => {strategy.next_target(self.public_leader_board.clone())}
-                    TargetStrategyType::BottomTargetStrategy(strategy) => {strategy.next_target(self.public_leader_board.clone())}
+                    TargetStrategyType::RandomTargetStrategy(strategy) => {
+                        strategy.next_target(self.public_leader_board.clone())
+                    }
+                    TargetStrategyType::TopTargetStrategy(strategy) => {
+                        strategy.next_target(self.public_leader_board.clone())
+                    }
+                    TargetStrategyType::BottomTargetStrategy(strategy) => {
+                        strategy.next_target(self.public_leader_board.clone())
+                    }
                 };
-                debug!("Selected next target: {:?}",next_target);
-                thread_writer.send(ChallengeResult { answer: challenge_answer, next_target: next_target.to_string() }).unwrap();
+                debug!("Selected next target: {:?}", next_target);
+                thread_writer
+                    .send(ChallengeResult {
+                        answer: challenge_answer,
+                        next_target: next_target.to_string(),
+                    })
+                    .unwrap();
             }
             Message::PublicLeaderBoard(leader_board) => {
                 self.public_leader_board = leader_board;

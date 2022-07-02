@@ -8,3 +8,8 @@ pub fn read_file(file_path: &str) -> String {
         .expect("Unable to read file");
     contents
 }
+
+pub fn read_file_macro() -> String {
+    let str = include_str!("../../data/liste-de-ses-morts.dic");
+    str.to_string()
+}
