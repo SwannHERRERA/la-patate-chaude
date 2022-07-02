@@ -20,7 +20,7 @@ pub fn solve_secret_sentence_challenge(
 }
 
 pub fn solve_secret_string_challenge(input: &RecoverSecretInput) -> RecoverSecretOutput {
-    println!("Solving challenge...\n{:?}", input);
+    // println!("Solving challenge...\n{:?}", input);
     let mut tuples = retrieve_tuples_from_letters(&input);
     let secret_sentence = retrieve_secret_sentence_from_tuples(
         &mut tuples,
@@ -98,7 +98,7 @@ fn retrieve_possible_strings_from_tuples(
     if tuples.is_empty() {
         // println!("{} propositions found.", propositions.len());
         return propositions.clone();
-    } else {
+    } else if propositions.len() > 0 {
         // println!("{} propositions found.", propositions.len());
     }
 
@@ -130,11 +130,6 @@ fn retrieve_possible_strings_from_tuple(
         let mut new_propositions =
             retrieve_possible_strings_from_string(&tuple, proposition, nb_words, is_sentence_valid);
         other_propositions.append(&mut new_propositions);
-        // new_propositions.iter().for_each(|new_proposition| {
-        //     if !other_propositions.contains(new_proposition) {
-        //         other_propositions.push(new_proposition.clone());
-        //     }
-        // });
     });
     other_propositions
 }
@@ -224,6 +219,12 @@ fn process_middle_element_of_tuple(
         if !is_current_char_present {
             if *compute_all_possibilities {
                 for i in 0..new_proposition.len() + 1 {
+                    if i == 0
+                        && new_proposition.len() > 0
+                        && new_proposition.chars().nth(0).unwrap().is_uppercase()
+                    {
+                        continue;
+                    }
                     let final_proposition = add_char_at_index(&new_proposition, &current_char, &i);
                     push_proposition_with_string_between_chars(
                         &mut new_propositions,
@@ -284,6 +285,12 @@ fn process_last_element_of_tuple(
         if !is_current_char_present {
             if *compute_all_possibilities {
                 for i in 0..new_proposition.len() + 1 {
+                    if i == 0
+                        && new_proposition.len() > 0
+                        && new_proposition.chars().nth(0).unwrap().is_uppercase()
+                    {
+                        continue;
+                    }
                     let final_proposition = add_char_at_index(&new_proposition, &current_char, &i);
                     push_proposition_with_string_before_char(
                         &mut new_propositions,
@@ -358,8 +365,18 @@ fn process_first_element_of_tuple_one_element(
         let mut new_proposition = proposition.clone();
         if !is_present(&new_proposition, current_char) {
             if *compute_all_possibilities {
-                for i in 0..new_proposition.len() + 1 {
-                    new_propositions.push(add_char_at_index(&new_proposition, current_char, &i))
+                if current_char.is_uppercase() {
+                    new_propositions.push(add_char_at_index(&new_proposition, current_char, &0))
+                } else {
+                    for i in 0..new_proposition.len() + 1 {
+                        if i == 0
+                            && new_proposition.len() > 0
+                            && new_proposition.chars().nth(0).unwrap().is_uppercase()
+                        {
+                            continue;
+                        }
+                        new_propositions.push(add_char_at_index(&new_proposition, current_char, &i))
+                    }
                 }
             } else {
                 new_proposition.push(*current_char);
@@ -397,16 +414,27 @@ fn process_first_element_of_tuple_more_than_one_element(
 
         if !is_current_char_present {
             if *compute_all_possibilities {
-                for i in 0..new_proposition.len() + 1 {
-                    let final_proposition = add_char_at_index(&new_proposition, &current_char, &i);
-                    push_proposition_with_string_after_char(
-                        &mut new_propositions,
-                        &next_char,
-                        &is_next_char_present,
-                        &proposition,
-                        &final_proposition,
-                        &nb_words,
-                    );
+                if current_char.is_uppercase() {
+                    new_propositions.push(add_char_at_index(&new_proposition, current_char, &0))
+                } else {
+                    for i in 0..new_proposition.len() + 1 {
+                        if i == 0
+                            && new_proposition.len() > 0
+                            && new_proposition.chars().nth(0).unwrap().is_uppercase()
+                        {
+                            continue;
+                        }
+                        let final_proposition =
+                            add_char_at_index(&new_proposition, &current_char, &i);
+                        push_proposition_with_string_after_char(
+                            &mut new_propositions,
+                            &next_char,
+                            &is_next_char_present,
+                            &proposition,
+                            &final_proposition,
+                            &nb_words,
+                        );
+                    }
                 }
             } else {
                 new_proposition.push(*current_char);
@@ -499,7 +527,7 @@ fn find_sentence(possibilities: &Vec<String>, dictionary: &HashMap<char, Vec<Str
     for possibility in possibilities {
         let mut founded = true;
         let words: Vec<String> = possibility
-            .to_ascii_lowercase()
+            .to_lowercase()
             .split(|c: char| c == ' ' || c == '-')
             .map(|s| s.to_string())
             .collect();
@@ -518,12 +546,13 @@ fn find_sentence(possibilities: &Vec<String>, dictionary: &HashMap<char, Vec<Str
 
 #[cfg(test)]
 mod tests {
+    use utils::file_utils::read_file;
+    use utils::string_utils::generate_dictionary_hashmap;
+
     use crate::challenge_resolve::{
         solve_secret_sentence_challenge, solve_secret_string_challenge,
     };
-    use crate::file_utils::read_file;
     use crate::models::RecoverSecretInput;
-    use crate::string_utils::generate_dictionary_hashmap;
 
     #[test]
     fn test_solve_secret_sentence_challenge() {
@@ -541,12 +570,23 @@ mod tests {
 
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 3,
-            letters: "ififrdlfatoil ft f".parse().unwrap(),
+            letters: "Ififrdlfatoil ft f".parse().unwrap(),
             tuple_sizes: vec![6, 6, 6],
         };
 
         let answer = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
-        assert_eq!(answer.secret_sentence, "li fait froid".to_string());
+        assert_eq!(answer.secret_sentence, "Il fait froid".to_string());
+
+        let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+            word_count: 3,
+            letters: " it fridft Ilfrlafdl tfidatrodliidIl fridIlft od"
+                .parse()
+                .unwrap(),
+            tuple_sizes: vec![8, 3, 4, 4, 6, 5, 4, 7, 7],
+        };
+
+        let answer = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
+        assert_eq!(answer.secret_sentence, "Il fait froid".to_string());
     }
 
     #[test]
@@ -565,12 +605,12 @@ mod tests {
     fn another_test_solve_secret_string_challenge() {
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 1,
-            letters: "rtlthotzo".parse().unwrap(),
+            letters: "rTlThoTzo".parse().unwrap(),
             tuple_sizes: vec![3, 3, 3],
         };
 
         let answer = solve_secret_string_challenge(&recover_secret_input);
-        assert_eq!(answer.secret_sentence, "rtlhzo".to_string());
+        assert_eq!(answer.secret_sentence, "rTlhzo".to_string());
     }
 
     #[test]
