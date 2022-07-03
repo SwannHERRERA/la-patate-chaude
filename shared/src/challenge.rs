@@ -1,5 +1,6 @@
-use hashcash::{dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput}, hashcash::Hashcash};
 use serde::{Deserialize, Serialize};
+
+use hashcash::{dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput}, hashcash::Hashcash};
 
 pub trait Challenge {
     /// Données en entrée du challenge
@@ -36,7 +37,6 @@ impl Challenge for MD5HashCash {
         Hashcash::verify(result.hashcode.clone(), self.0.complexity)
     }
 }
-
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

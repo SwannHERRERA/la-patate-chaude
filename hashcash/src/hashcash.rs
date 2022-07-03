@@ -1,30 +1,36 @@
+use std::process::exit;
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::thread;
 
-use crate::config::{NTHREADS, THREAD_SEED_ATTRIBUTION};
 use crate::dto::MD5HashCashOutput;
 use crate::utils::check_hash;
 
 pub struct Hashcash;
 
+pub static THREAD_COUNT: AtomicUsize = AtomicUsize::new(1);
+pub static THREAD_SEED_SLICE: AtomicU64 = AtomicU64::new(1000);
+
 impl Hashcash {
     pub fn solve(message: String, complexity: u32) -> MD5HashCashOutput {
+        let thread_count = THREAD_COUNT.load(Ordering::Relaxed);
+        let thread_seed_slice = THREAD_SEED_SLICE.load(Ordering::Relaxed);
         let seed_counter = Arc::new(AtomicU64::new(0));
         let is_solved = Arc::new(AtomicBool::new(false));
         let (worker_tx, worker_rx) = mpsc::channel();
-        for _ in 0..NTHREADS {
+        for _ in 0..thread_count {
+            let thread_seed_slice = thread_seed_slice.clone();
             let worker_tx = worker_tx.clone();
             let seed_counter = seed_counter.clone();
             let is_solved = is_solved.clone();
             let message = message.clone();
             thread::spawn(move || {
                 'outer: loop {
-                    let seed = seed_counter.fetch_add(THREAD_SEED_ATTRIBUTION, Ordering::Relaxed);
-                    for seed in seed..seed + THREAD_SEED_ATTRIBUTION {
+                    let seed = seed_counter.fetch_add(thread_seed_slice, Ordering::Relaxed);
+                    for seed in seed..seed + thread_seed_slice {
                         if is_solved.load(Ordering::Relaxed) {
                             break 'outer;
                         }

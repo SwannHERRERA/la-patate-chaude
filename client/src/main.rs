@@ -1,16 +1,19 @@
 use std::{io::{Read, Write}, net::TcpStream, thread};
 use std::net::{Shutdown, SocketAddr};
+use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::thread::JoinHandle;
 
+use clap::Parser;
 use log::{debug, error, trace, warn};
 use rand;
 use rand::Rng;
 
+use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType};
-use shared::config::{IP, PORT, LOG_LEVEL};
+use shared::config::{IP, LOG_LEVEL, PORT};
 use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
 use shared::subscribe::SubscribeResult;
@@ -19,15 +22,43 @@ use crate::strategies::{BottomTargetStrategy, RandomTargetStrategy, TargetStrate
 
 mod strategies;
 
+/// Client configuration
+#[derive(Parser, Default, Debug)]
+#[clap(author, version, about, long_about = None)]
+pub struct ClientArgs {
+    /// Name of the player must be unique
+    #[clap(short, long, value_parser, default_value = generate_random_username())]
+    username: String,
+
+    /// Server IP
+    #[clap(short, value_parser, default_value = "127.0.0.1")]
+    ip: String,
+
+    /// Server port
+    #[clap(long, value_parser, default_value_t = 7878)]
+    port: u16,
+
+    /// Threads for challenge solving
+    #[clap(long, value_parser, default_value_t = num_cpus::get())]
+    thread_count: usize,
+
+    /// The number of seed incrementation
+    #[clap(long, value_parser, default_value_t = 1000)]
+    thread_seed_slice: u64,
+}
+
 fn main() {
+    let args = ClientArgs::parse();
+    THREAD_COUNT.store(args.thread_count, Ordering::Relaxed);
+    THREAD_SEED_SLICE.store(args.thread_seed_slice, Ordering::Relaxed);
     std::env::set_var("RUST_LOG", LOG_LEVEL);
     let address = SocketAddr::from((IP, PORT));
     match TcpStream::connect(address) {
         Ok(stream) => {
-            let client = Client::new();
+            let client = Client::new(args.username);
             client.start_threads(stream);
         }
-        Err(_) => panic!("Could not connect to server {:?} on port {}", IP, PORT),
+        Err(_) => panic!("Could not connect to server {:?} on port {}", args.ip, args.port),
     }
 }
 
@@ -46,17 +77,14 @@ pub struct Client {
 }
 
 impl Client {
-    fn new() -> Client {
+    fn new(username: String) -> Client {
         let mut rng = rand::thread_rng();
-        let n1: u8 = rng.gen();
-        let username = "test".to_string() + &*n1.to_string();
-        let next_target_strategy= match rng.gen_range(0..=2) {
+        let next_target_strategy = match rng.gen_range(0..=2) {
             0 => TargetStrategyType::TopTargetStrategy(TopTargetStrategy { current_name: username.clone() }),
             1 => TargetStrategyType::BottomTargetStrategy(BottomTargetStrategy { current_name: username.clone() }),
             2 => TargetStrategyType::RandomTargetStrategy(RandomTargetStrategy { current_name: username.clone() }),
-            _ => {panic!()}
+            _ => { panic!() }
         };
-        println!("Selected strategy : {:?}", next_target_strategy);
         debug!("Selected strategy : {:?}", next_target_strategy);
         Client {
             public_leader_board: vec![],
@@ -101,11 +129,11 @@ impl Client {
                 thread_writer.send(answer).unwrap();
             }
             Message::Challenge(challenge) => {
-                let challenge_answer = solve_challenge(challenge);
+                let challenge_answer = solve_challenge(challenge).clone();
                 let next_target = match self.next_target_strategy.clone() {
-                    TargetStrategyType::RandomTargetStrategy(strategy) => {strategy.next_target(self.public_leader_board.clone())}
-                    TargetStrategyType::TopTargetStrategy(strategy) => {strategy.next_target(self.public_leader_board.clone())}
-                    TargetStrategyType::BottomTargetStrategy(strategy) => {strategy.next_target(self.public_leader_board.clone())}
+                    TargetStrategyType::RandomTargetStrategy(strategy) => { strategy.next_target(self.public_leader_board.clone()) }
+                    TargetStrategyType::TopTargetStrategy(strategy) => { strategy.next_target(self.public_leader_board.clone()) }
+                    TargetStrategyType::BottomTargetStrategy(strategy) => { strategy.next_target(self.public_leader_board.clone()) }
                 };
                 debug!("Selected next target: {:?}",next_target);
                 thread_writer.send(ChallengeResult { answer: challenge_answer, next_target: next_target.to_string() }).unwrap();
@@ -151,4 +179,11 @@ impl Client {
             }
         });
     }
+}
+
+fn generate_random_username() -> &'static str {
+    let mut rng = rand::thread_rng();
+    let n1: u8 = rng.gen();
+    let username = "user".to_string() + &*n1.to_string();
+    Box::leak(username.into_boxed_str())
 }
