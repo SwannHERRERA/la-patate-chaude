@@ -580,6 +580,7 @@ dependencies = [
 name = "recover_secret"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "rand",
  "serde",
  "utils",

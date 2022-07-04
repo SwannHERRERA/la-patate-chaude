@@ -5,7 +5,7 @@ use utils::string_utils::{generate_random_tuple, is_sequence_valid, word_count};
 use crate::challenge_resolve::retrieve_tuples_from_letters;
 use crate::models::{RecoverSecretInput, RecoverSecretOutput};
 
-fn generate_challenge() -> RecoverSecretInput {
+pub fn generate_challenge() -> RecoverSecretInput {
     let mut rng = rand::thread_rng();
     let word_count = rng.gen_range(1..=5);
     let mut tuple_sizes: Vec<usize> = Vec::new();
@@ -25,7 +25,7 @@ fn generate_challenge() -> RecoverSecretInput {
     }
 }
 
-fn validate_challenge(
+pub fn validate_challenge(
     challenge_input: &RecoverSecretInput,
     challenge_output: &RecoverSecretOutput,
 ) -> bool {
