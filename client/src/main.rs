@@ -97,7 +97,7 @@ impl Client {
                 current_name: username.clone(),
             }),
             _ => {
-                panic!()
+                panic!("Cannot find strategy type")
             }
         };
         println!("Selected strategy : {:?}", next_target_strategy);
