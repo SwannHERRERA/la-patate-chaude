@@ -34,7 +34,7 @@ impl Server {
       let game = self.game.clone();
       let handle = thread::spawn(move || {
         let mut exchanger = Exchanger::new(message_handler, tx, game);
-        exchanger.hold_communcation(stream_copy);
+        exchanger.hold_communication(stream_copy);
       });
       handles.push(handle);
     }
