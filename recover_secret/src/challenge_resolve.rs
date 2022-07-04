@@ -90,7 +90,7 @@ fn find_sequence(propositions: &Vec<String>, nb_words: &usize) -> String {
     return add_spaces_in_sequence(&sequence, &(*nb_words - current_word_count));
 }
 
-fn display_possibilities(propositions: &Vec<String>) {
+/*fn display_possibilities(propositions: &Vec<String>) {
     if propositions.len() > 0 {
         println!("===================================================");
         for i in 0..propositions.len() {
@@ -102,7 +102,7 @@ fn display_possibilities(propositions: &Vec<String>) {
         println!("No solution found.");
     }
 }
-
+*/
 fn retrieve_possible_strings_from_tuples(
     tuples: &mut Vec<Vec<char>>,
     propositions: &mut Vec<String>,
