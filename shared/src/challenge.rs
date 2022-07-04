@@ -6,6 +6,7 @@ use hashcash::{
     dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput},
     hashcash::Hashcash,
 };
+use recover_secret::challenge_generator::validate_challenge;
 use recover_secret::challenge_resolve::{
     solve_secret_sentence_challenge, solve_secret_sentence_challenge_cheat,
     solve_secret_string_challenge, solve_secret_string_challenge_cheat,
@@ -84,8 +85,8 @@ impl Challenge for RecoverSecret {
         solve_secret_string_challenge(&self.0)
     }
 
-    fn verify(&self, _: Self::Output) -> bool {
-        todo!()
+    fn verify(&self, result: Self::Output) -> bool {
+        validate_challenge(&self.0, &result)
     }
 }
 
@@ -117,6 +118,6 @@ pub enum ChallengeType {
 
 #[derive(Debug, Clone)]
 pub enum GameType {
-    Hashcash,
+    HashCash,
     RecoverSecret,
 }
