@@ -56,9 +56,13 @@ pub struct ClientArgs {
     #[clap(long, value_parser, default_value_t = 1000)]
     thread_seed_slice: u64,
 
-    /// If use dictionary for recover secret challenge
+    /// Use dictionary sentence for recover secret challenge
     #[clap(long, value_parser, default_value_t = false)]
     pub load_dictionary: bool,
+
+    /// Enable cheat mode for recover secret challenge
+    #[clap(long, value_parser, default_value_t = false)]
+    pub cheat: bool,
 }
 
 fn main() {
@@ -70,7 +74,7 @@ fn main() {
 
     match TcpStream::connect(address) {
         Ok(stream) => {
-            let client = Client::new(args.username, args.load_dictionary);
+            let client = Client::new(&args);
             client.start_threads(stream);
         }
         Err(_) => panic!(
@@ -83,14 +87,23 @@ fn main() {
 fn solve_challenge(
     challenge: ChallengeType,
     dictionary_hashmap: &Option<HashMap<char, Vec<String>>>,
+    cheat: &bool,
 ) -> ChallengeAnswer {
     match challenge {
         ChallengeType::MD5HashCash(challenge) => ChallengeAnswer::MD5HashCash(challenge.solve()),
         ChallengeType::RecoverSecret(challenge) => {
-            if let Some(dictionary_hashmap) = dictionary_hashmap {
-                ChallengeAnswer::RecoverSecret(challenge.solve_secret(dictionary_hashmap))
+            return if let Some(dictionary_hashmap) = dictionary_hashmap {
+                if *cheat {
+                    ChallengeAnswer::RecoverSecret(challenge.solve_secret_cheat())
+                } else {
+                    ChallengeAnswer::RecoverSecret(challenge.solve_secret(dictionary_hashmap))
+                }
             } else {
-                ChallengeAnswer::RecoverSecret(challenge.solve())
+                if *cheat {
+                    ChallengeAnswer::RecoverSecret(challenge.solve_cheat())
+                } else {
+                    ChallengeAnswer::RecoverSecret(challenge.solve())
+                }
             }
         }
     }
@@ -101,14 +114,16 @@ pub struct Client {
     username: String,
     next_target_strategy: TargetStrategyType,
     dictionary_hashmap: Option<HashMap<char, Vec<String>>>,
+    cheat: bool,
 }
 
 impl Client {
-    fn new(username: String, load_dictionary: bool) -> Client {
+    fn new(args: &ClientArgs) -> Client {
         let mut rng = rand::thread_rng();
         // Load dictionary file
         let dictionary_hashmap;
-        if load_dictionary {
+        let username = args.username.clone();
+        if args.load_dictionary {
             println!("Reading dictionary file...");
             let dictionary = read_file_macro();
             println!("Generating hashmap...");
@@ -138,6 +153,7 @@ impl Client {
             username,
             next_target_strategy,
             dictionary_hashmap,
+            cheat: args.cheat,
         }
     }
 
@@ -183,7 +199,8 @@ impl Client {
                 thread_writer.send(answer).unwrap();
             }
             Message::Challenge(challenge) => {
-                let challenge_answer = solve_challenge(challenge, &self.dictionary_hashmap);
+                let challenge_answer =
+                    solve_challenge(challenge, &self.dictionary_hashmap, &self.cheat);
                 let next_target = match self.next_target_strategy.clone() {
                     TargetStrategyType::RandomTargetStrategy(strategy) => {
                         strategy.next_target(self.public_leader_board.clone())
