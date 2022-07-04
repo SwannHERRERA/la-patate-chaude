@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use rand::Rng;
+
 pub fn get_string_after_last_occurrence(string: &String, character: &char) -> String {
     let mut new_string = String::new();
     let index = rfind_utf8(string, *character);
@@ -286,6 +288,28 @@ pub fn find_n_utf8(s: &str, chr: char, n: &usize) -> Option<usize> {
         index += 1;
     }
     None
+}
+
+pub fn generate_random_tuple(length: &usize) -> Vec<char> {
+    let mut rng = rand::thread_rng();
+    let mut random_string = Vec::new();
+    for _ in 0..*length {
+        // random char, only letters
+        random_string.push(rng.sample(rand::distributions::Alphanumeric) as char);
+    }
+    random_string
+}
+
+pub fn is_sequence_valid(string: &String, sequence: &Vec<char>) -> bool {
+    let mut string_check = string.clone();
+    for char in sequence {
+        if !is_present(&string_check, char) {
+            return false;
+        }
+        string_check = get_string_after_first_occurrence(&string_check, char);
+    }
+
+    true
 }
 
 #[cfg(test)]

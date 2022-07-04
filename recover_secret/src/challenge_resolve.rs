@@ -31,7 +31,13 @@ pub fn solve_secret_string_challenge(input: &RecoverSecretInput) -> RecoverSecre
     RecoverSecretOutput { secret_sentence }
 }
 
-fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
+pub fn solve_secret_string_challenge_cheat(input: &RecoverSecretInput) -> RecoverSecretOutput {
+    // println!("Solving challenge...\n{:?}", input);
+    let secret_sentence = find_sequence(&vec![input.letters.to_string()], &input.word_count);
+    RecoverSecretOutput { secret_sentence }
+}
+
+pub fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
     let mut tuples: Vec<Vec<char>> = Vec::new();
     let mut current_index = 0;
     input.tuple_sizes.iter().for_each(|size| {
