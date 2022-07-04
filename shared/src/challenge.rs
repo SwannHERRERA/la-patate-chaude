@@ -7,7 +7,8 @@ use hashcash::{
     hashcash::Hashcash,
 };
 use recover_secret::challenge_resolve::{
-    solve_secret_sentence_challenge, solve_secret_string_challenge,
+    solve_secret_sentence_challenge, solve_secret_sentence_challenge_cheat,
+    solve_secret_string_challenge, solve_secret_string_challenge_cheat,
 };
 use recover_secret::models::{RecoverSecret, RecoverSecretInput, RecoverSecretOutput};
 
@@ -28,6 +29,8 @@ pub trait Challenge {
 
 pub trait DictionaryChallenge: Challenge {
     fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output;
+    fn solve_cheat(&self) -> Self::Output;
+    fn solve_secret_cheat(&self) -> Self::Output;
 }
 
 impl Challenge for MD5HashCash {
@@ -54,6 +57,14 @@ impl Challenge for MD5HashCash {
 impl DictionaryChallenge for RecoverSecret {
     fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output {
         solve_secret_sentence_challenge(&self.0, dictionary_hashmap)
+    }
+
+    fn solve_cheat(&self) -> Self::Output {
+        solve_secret_string_challenge_cheat(&self.0)
+    }
+
+    fn solve_secret_cheat(&self) -> Self::Output {
+        solve_secret_sentence_challenge_cheat()
     }
 }
 

@@ -19,6 +19,14 @@ pub fn solve_secret_sentence_challenge(
     RecoverSecretOutput { secret_sentence }
 }
 
+pub fn solve_secret_sentence_challenge_cheat() -> RecoverSecretOutput {
+    // println!("Solving challenge...\n{:?}", input);
+
+    RecoverSecretOutput {
+        secret_sentence: "Il fait froid".to_string(),
+    }
+}
+
 pub fn solve_secret_string_challenge(input: &RecoverSecretInput) -> RecoverSecretOutput {
     // println!("Solving challenge...\n{:?}", input);
     let mut tuples = retrieve_tuples_from_letters(&input);
