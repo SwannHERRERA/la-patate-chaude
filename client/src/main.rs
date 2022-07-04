@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::net::{Shutdown, SocketAddr};
+use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
@@ -10,6 +11,7 @@ use std::{
     thread,
 };
 
+use clap::Parser;
 use log::{debug, error, trace, warn};
 use rand;
 use rand::Rng;
@@ -17,6 +19,9 @@ use rand::Rng;
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType, DictionaryChallenge};
 use shared::config::{IP, LOG_LEVEL, PORT};
 use shared::message::Message::ChallengeResult;
+use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
+use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType};
+use shared::config::{IP, LOG_LEVEL, PORT};
 use shared::message::{Message, PublicLeaderBoard};
 use shared::subscribe::SubscribeResult;
 use utils::file_utils::{read_file, read_file_macro};
@@ -29,7 +34,35 @@ use crate::strategies::{
 
 mod strategies;
 
+/// Client configuration
+#[derive(Parser, Default, Debug)]
+#[clap(author, version, about, long_about = None)]
+pub struct ClientArgs {
+    /// Name of the player must be unique
+    #[clap(short, long, value_parser, default_value = generate_random_username())]
+    username: String,
+
+    /// Server IP
+    #[clap(short, value_parser, default_value = "127.0.0.1")]
+    ip: String,
+
+    /// Server port
+    #[clap(long, value_parser, default_value_t = 7878)]
+    port: u16,
+
+    /// Threads for challenge solving
+    #[clap(long, value_parser, default_value_t = num_cpus::get())]
+    thread_count: usize,
+
+    /// The number of seed incrementation
+    #[clap(long, value_parser, default_value_t = 1000)]
+    thread_seed_slice: u64,
+}
+
 fn main() {
+    let args = ClientArgs::parse();
+    THREAD_COUNT.store(args.thread_count, Ordering::Relaxed);
+    THREAD_SEED_SLICE.store(args.thread_seed_slice, Ordering::Relaxed);
     std::env::set_var("RUST_LOG", LOG_LEVEL);
     let address = SocketAddr::from((IP, PORT));
 
@@ -39,10 +72,10 @@ fn main() {
 
     match TcpStream::connect(address) {
         Ok(stream) => {
-            let client = Client::new(load_dictionary);
+            let client = Client::new(args.username, load_dictionary);
             client.start_threads(stream);
         }
-        Err(_) => panic!("Could not connect to server {:?} on port {}", IP, PORT),
+        Err(_) => panic!("Could not connect to server {:?} on port {}", args.ip, args.port),
     }
 }
 
@@ -70,7 +103,7 @@ pub struct Client {
 }
 
 impl Client {
-    fn new(load_dictionary: bool) -> Client {
+    fn new(username: String, load_dictionary: bool) -> Client {
         let mut rng = rand::thread_rng();
         let n1: u8 = rng.gen();
         let username = "test".to_string() + &*n1.to_string();
@@ -100,7 +133,6 @@ impl Client {
                 panic!("Cannot find strategy type")
             }
         };
-        println!("Selected strategy : {:?}", next_target_strategy);
         debug!("Selected strategy : {:?}", next_target_strategy);
         Client {
             public_leader_board: vec![],
@@ -216,4 +248,11 @@ impl Client {
             }
         });
     }
+}
+
+fn generate_random_username() -> &'static str {
+    let mut rng = rand::thread_rng();
+    let n1: u8 = rng.gen();
+    let username = "user".to_string() + &*n1.to_string();
+    Box::leak(username.into_boxed_str())
 }
