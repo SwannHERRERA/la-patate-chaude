@@ -1,5 +1,15 @@
-use hashcash::{dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput}, hashcash::Hashcash};
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
+
+use hashcash::{
+    dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput},
+    hashcash::Hashcash,
+};
+use recover_secret::challenge_resolve::{
+    solve_secret_sentence_challenge, solve_secret_string_challenge,
+};
+use recover_secret::models::{RecoverSecret, RecoverSecretInput, RecoverSecretOutput};
 
 pub trait Challenge {
     /// Données en entrée du challenge
@@ -14,6 +24,10 @@ pub trait Challenge {
     fn solve(&self) -> Self::Output;
     /// Vérifie qu'une sortie est valide pour le challenge
     fn verify(&self, answer: Self::Output) -> bool;
+}
+
+pub trait DictionaryChallenge: Challenge {
+    fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output;
 }
 
 impl Challenge for MD5HashCash {
@@ -37,11 +51,37 @@ impl Challenge for MD5HashCash {
     }
 }
 
+impl DictionaryChallenge for RecoverSecret {
+    fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output {
+        solve_secret_sentence_challenge(&self.0, dictionary_hashmap)
+    }
+}
 
+impl Challenge for RecoverSecret {
+    type Input = RecoverSecretInput;
+    type Output = RecoverSecretOutput;
+
+    fn name() -> String {
+        "RecoverSecret".to_string()
+    }
+
+    fn new(input: Self::Input) -> Self {
+        RecoverSecret(input)
+    }
+
+    fn solve(&self) -> Self::Output {
+        solve_secret_string_challenge(&self.0)
+    }
+
+    fn verify(&self, _: Self::Output) -> bool {
+        todo!()
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ChallengeAnswer {
     MD5HashCash(MD5HashCashOutput),
+    RecoverSecret(RecoverSecretOutput),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -61,4 +101,5 @@ pub struct ReportedChallengeResult {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ChallengeType {
     MD5HashCash(MD5HashCash),
+    RecoverSecret(RecoverSecret),
 }
