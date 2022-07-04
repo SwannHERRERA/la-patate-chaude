@@ -74,6 +74,7 @@ mod tests {
         ));
     }
 
+    #[test]
     fn test_validate_challenge_valid_2() {
         let recover_secret_input = RecoverSecretInput {
             word_count: 3,
