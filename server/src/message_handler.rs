@@ -30,13 +30,13 @@ impl MessageHandler {
     self.challenge.lock().unwrap().clone()
   }
 
-  pub fn handle_message(&mut self, message: Message, stream: &TcpStream, current_challenge: Option<ChallengeType>) -> Option<MessageType> {
+  pub fn handle_message(&mut self, message: &Message, stream: &TcpStream, current_challenge: Option<ChallengeType>) -> Option<MessageType> {
       info!("Incomming Message: {:?}", message);
       match message {
         Message::Hello => self.handle_hello(),
-        Message::Subscribe { name } => self.handle_subscribtion(name, stream),
+        Message::Subscribe { name } => self.handle_subscribtion(name.clone(), stream),
         Message::StartGame {  } => self.handle_start_game(),
-        Message::ChallengeResult { answer, next_target } => self.handle_challenge_result(answer, next_target, current_challenge),
+        Message::ChallengeResult { answer, next_target } => self.handle_challenge_result(answer.clone(), next_target.to_owned(), current_challenge),
         Message::EndOfCommunication =>self.handle_end_of_communication(stream),
         _ => panic!("Not implemented")
       }

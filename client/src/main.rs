@@ -21,6 +21,7 @@ mod strategies;
 
 fn main() {
     std::env::set_var("RUST_LOG", LOG_LEVEL);
+    pretty_env_logger::init();
     let address = SocketAddr::from((IP, PORT));
     match TcpStream::connect(address) {
         Ok(stream) => {
@@ -76,14 +77,20 @@ impl Client {
     fn start_message_listener(mut self, mut stream: TcpStream, thread_writer: Sender<Message>) -> JoinHandle<()> {
         loop {
             let mut buf_size = [0; 4];
-            stream.read(&mut buf_size).unwrap();
+            match stream.read(&mut buf_size) {
+                Ok(_) => trace!("Read message size"),
+                Err(err) => panic!("Error reading message size: {}", err),
+            }
             let res_size = u32::from_be_bytes(buf_size);
             if res_size == 0 {
                 continue;
             }
 
             let mut buf = vec![0; res_size as usize];
-            stream.read(&mut buf).unwrap();
+            match stream.read(&mut buf) {
+                Ok(_) => trace!("Read message"),
+                Err(err) => panic!("Error reading message: {}", err),
+            }
             let string_receive = String::from_utf8_lossy(&buf);
 
             match serde_json::from_str(&string_receive) {
@@ -98,7 +105,14 @@ impl Client {
         match message {
             Message::Welcome { .. } => {
                 let answer = Message::Subscribe { name: self.username.clone() };
-                thread_writer.send(answer).unwrap();
+                match thread_writer.send(answer) {
+                    Ok(_) => {
+                        debug!("Subscribed");
+                    },
+                    Err(err) => {
+                        error!("Error while subscribing: {:?}", err);
+                    },
+                }
             }
             Message::Challenge(challenge) => {
                 let challenge_answer = solve_challenge(challenge);
@@ -122,7 +136,7 @@ impl Client {
                 }
             }
             Message::RoundSummary { challenge: _, chain: _ } => {}
-        Message::EndOfGame { leader_board } => {
+            Message::EndOfGame { leader_board } => {
                 trace!("{:?}", leader_board);
                 thread_writer.send(Message::EndOfGame { leader_board }).unwrap();
             }
