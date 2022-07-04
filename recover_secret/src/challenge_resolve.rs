@@ -68,7 +68,7 @@ fn retrieve_secret_sentence_from_tuples(
     let propositions =
         retrieve_possible_strings_from_tuples(tuples, &mut Vec::new(), nb_words, is_sentence_valid);
 
-    display_possibilities(&propositions);
+    // display_possibilities(&propositions);
 
     if propositions.len() > 0 {
         if *is_sentence_valid {
@@ -110,10 +110,10 @@ fn retrieve_possible_strings_from_tuples(
     is_sentence_valid: &bool,
 ) -> Vec<String> {
     if tuples.is_empty() {
-        println!("{} propositions found.", propositions.len());
+        // println!("{} propositions found.", propositions.len());
         return propositions.clone();
     } else if propositions.len() > 0 {
-        println!("{} propositions found.", propositions.len());
+        // println!("{} propositions found.", propositions.len());
     }
 
     let tuple = tuples.remove(0);

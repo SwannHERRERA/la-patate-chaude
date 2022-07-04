@@ -15,7 +15,7 @@ fn main() {
     println!("Done !");
 
     //RecoverSecretInput
-   /* let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
         word_count: 2,
         letters: "C'echCt chut cou't htu'ehuest o".parse().unwrap(),
         tuple_sizes: vec![5, 6, 5, 4, 2, 4, 5],
@@ -30,49 +30,49 @@ fn main() {
     println!("{:?}", output);
     println!("{:?}", i.elapsed());
 
-      let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
-        word_count: 1,
-        letters: "iffiiilfatroridato".parse().unwrap(),
-        tuple_sizes: vec![3, 3, 3, 3, 3, 3],
-    };
+    /*  let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+            word_count: 1,
+            letters: "iffiiilfatroridato".parse().unwrap(),
+            tuple_sizes: vec![3, 3, 3, 3, 3, 3],
+        };
 
-    println!(
-        "\nSolving challenge 2 (random string)...\n{:?}",
-        recover_secret_input
-    );
-    let i = Instant::now();
-    let output = solve_secret_string_challenge(&recover_secret_input);
-    println!("{:?}", output);
-    println!("{:?}", i.elapsed());
+        println!(
+            "\nSolving challenge 2 (random string)...\n{:?}",
+            recover_secret_input
+        );
+        let i = Instant::now();
+        let output = solve_secret_string_challenge(&recover_secret_input);
+        println!("{:?}", output);
+        println!("{:?}", i.elapsed());
 
-    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
-        word_count: 1,
-        letters: "rtlthotzo".parse().unwrap(),
-        tuple_sizes: vec![3, 3, 3],
-    };
-    println!(
-        "\nSolving challenge 3 (random string)...\n{:?}",
-        recover_secret_input
-    );
-    let i = Instant::now();
-    let output = solve_secret_string_challenge(&recover_secret_input);
-    println!("{:?}", output);
-    println!("{:?}", i.elapsed());
+        let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+            word_count: 1,
+            letters: "rtlthotzo".parse().unwrap(),
+            tuple_sizes: vec![3, 3, 3],
+        };
+        println!(
+            "\nSolving challenge 3 (random string)...\n{:?}",
+            recover_secret_input
+        );
+        let i = Instant::now();
+        let output = solve_secret_string_challenge(&recover_secret_input);
+        println!("{:?}", output);
+        println!("{:?}", i.elapsed());
 
-    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
-        word_count: 6,
-        letters: "iffiiilfatroridato".parse().unwrap(),
-        tuple_sizes: vec![3, 3, 3, 3, 3, 3],
-    };
-    println!(
-        "\nSolving challenge 4 (random string)...\n{:?}",
-        recover_secret_input
-    );
-    let i = Instant::now();
-    let output = solve_secret_string_challenge(&recover_secret_input);
-    println!("{:?}", output);
-    println!("{:?}", i.elapsed());
-
+        let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+            word_count: 6,
+            letters: "iffiiilfatroridato".parse().unwrap(),
+            tuple_sizes: vec![3, 3, 3, 3, 3, 3],
+        };
+        println!(
+            "\nSolving challenge 4 (random string)...\n{:?}",
+            recover_secret_input
+        );
+        let i = Instant::now();
+        let output = solve_secret_string_challenge(&recover_secret_input);
+        println!("{:?}", output);
+        println!("{:?}", i.elapsed());
+    */
     let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
         word_count: 3,
         letters: "ififrdlfatoil ft f".parse().unwrap(),
@@ -104,9 +104,8 @@ fn main() {
     let output = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
     println!("{:?}", output);
     println!("{:?}", i.elapsed());
-    */
-//{ word_count: 3, letters: " itiIlfi oi fitoid oiaiidIlffoidliro toidlafro", tuple_sizes: [4, 7, 7, 3, 4, 7, 4, 5, 5] }
-    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+
+    /*    let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
         word_count: 3,
         letters: " itiIlfi oi fitoid oiaiidIlffoidliro toidlafro"
             .parse()
@@ -121,5 +120,5 @@ fn main() {
     let i = Instant::now();
     let output = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
     println!("{:?}", output);
-    println!("{:?}", i.elapsed());
+    println!("{:?}", i.elapsed());*/
 }
