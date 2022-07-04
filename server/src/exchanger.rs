@@ -1,50 +1,42 @@
-use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::{Read, Write}, time::Instant};
+use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::Read, time::Instant};
 
 use hashcash::dto::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info, debug};
-use shared::{message::{Message, ResponseType, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
+use shared::{message::{Message, MessageType}, challenge::ChallengeType};
 
 use crate::{message_handler::MessageHandler, game::Game};
 
 pub struct Exchanger {
   message_handler: MessageHandler,
   game: Game,
-  tx: Sender<Message>,
+  tx: Sender<MessageType>,
 }
 
 impl Exchanger {
-  pub fn new(message_handler: MessageHandler, tx: Sender<Message>, game: Game) -> Exchanger {
+  pub fn new(message_handler: MessageHandler, tx: Sender<MessageType>, game: Game) -> Exchanger {
     Exchanger { message_handler, tx, game }
   }
 
   pub fn hold_communcation(&mut self, stream: TcpStream) {
-    info!("peer address={:?}", stream.peer_addr());
+    let peer_address = match stream.peer_addr() {
+        Ok(addr) => addr.to_string(),
+        Err(_) => panic!("Error getting peer address"),
+    };
+
+    info!("peer address={:?}", &peer_address);
     loop  {
       let parsed_message = self.parse_message_from_tcp_stream(&stream);
       if parsed_message.is_none() {
         continue;
       }
       let parsed_message = parsed_message.unwrap();
-      match self.message_handler.handle_message(&parsed_message, &stream, self.message_handler.get_challenge()) {
+      match self.message_handler.handle_message(&parsed_message, peer_address.clone(), self.message_handler.get_challenge()) {
         Some(response) => {
           if matches!(response.message, Message::EndOfCommunication) {
-            self.game.players.set_player_inactive(&stream);
+            self.game.players.unable_player(&stream);
             break;
           }
-          match response.message_type {
-            ResponseType::Broadcast => {
-              trace!("Broadcast: {:?}", response.message);
-              let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
-              self.tx.send(response.message).unwrap();
-              if is_start_round {
-                self.challenge();
-              }
-            }
-            ResponseType::Unicast => {
-              trace!("Unicast: {:?}", response.message);
-              self.send_response(response.message, &stream);
-            }
-          }
+          self.tx.send(response).unwrap();
         },
         None => {
           warn!("No response for message: {:?}", &parsed_message);
@@ -62,8 +54,8 @@ impl Exchanger {
     *now = Some(Instant::now());
     let challenge_message = self.start_round();
     let player_name = self.game.players.pick_random_player().unwrap().name;
-    if let Some(mut player) = self.game.players.get_and_remove_player_by_name(&player_name) {
-      player.send_message(challenge_message.message);
+    if let Some(player) = self.game.players.get_and_remove_player_by_name(&player_name) {
+      self.tx.send(challenge_message).unwrap();
       self.game.players.add_player(player);
     }
   }
@@ -75,7 +67,7 @@ impl Exchanger {
     if decimal_size == 0 {
       return None;
     }
-    debug!("decinmal size : {}", decimal_size);
+    debug!("decinmal size : {}", &decimal_size);
 
     let mut bytes_of_message = vec![0; decimal_size as usize];
     debug!("bytes_of_message: {:?}", &bytes_of_message);
@@ -93,24 +85,11 @@ impl Exchanger {
     }
   }
 
-  pub fn send_response(&self, response: Message, mut tcp_stream: &TcpStream) {
-    let response = serde_json::to_string(&response);
-    if response.is_err() {
-      panic!("Cannot serialize message : {:?}", response)
-    }
-    let response = response.unwrap();
-    let response = response.as_bytes();
-    let response_size = response.len() as u32;
-    let response_length_as_bytes = response_size.to_be_bytes();
-    let result = tcp_stream.write(&[&response_length_as_bytes, response].concat());
-    trace!("byte write : {:?}, ", result);
-  }
-
   fn start_round(&self) -> MessageType {
     let challenge = ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()));
 
     let message = Message::Challenge(challenge);
-    MessageType::unicast(message)
+    MessageType::unicast(message, self.game.players.pick_random_player().unwrap().name)
   }
 }
 

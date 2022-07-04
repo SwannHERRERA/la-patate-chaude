@@ -17,7 +17,7 @@ impl PublicPlayer {
       stream_id,
       score: 0,
       steps: 0,
-      is_active: true,
+      is_active: false,
       total_used_time: 0.0,
     }
   }

@@ -78,7 +78,7 @@ impl Client {
         loop {
             let mut buf_size = [0; 4];
             match stream.read(&mut buf_size) {
-                Ok(_) => trace!("Read message size"),
+                Ok(_) => {},
                 Err(err) => panic!("Error reading message size: {}", err),
             }
             let res_size = u32::from_be_bytes(buf_size);

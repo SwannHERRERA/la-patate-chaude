@@ -1,14 +1,12 @@
-use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use hashcash::dto::{MD5HashCash, MD5HashCashOutput};
 use log::{info, debug, trace, error};
 use shared::challenge::{ChallengeType, ChallengeAnswer, Challenge};
 use shared::message::{Message, MessageType};
-use shared::public_player::PublicPlayer;
 use shared::subscribe::{SubscribeResult, SubscribeError};
 
 use crate::game::Game;
-use crate::player::{PlayerList, Player};
+use crate::player::PlayerList;
 #[derive(Debug)]
 pub struct MessageHandler {
   players: PlayerList,
@@ -30,36 +28,35 @@ impl MessageHandler {
     self.challenge.lock().unwrap().clone()
   }
 
-  pub fn handle_message(&mut self, message: &Message, stream: &TcpStream, current_challenge: Option<ChallengeType>) -> Option<MessageType> {
+  pub fn handle_message(&mut self, message: &Message, client_id: String, current_challenge: Option<ChallengeType>) -> Option<MessageType> {
       info!("Incomming Message: {:?}", message);
       match message {
-        Message::Hello => self.handle_hello(),
-        Message::Subscribe { name } => self.handle_subscribtion(name.clone(), stream),
+        Message::Hello => self.handle_hello(client_id),
+        Message::Subscribe { name } => self.handle_subscribtion(name.clone(), client_id),
         Message::StartGame {  } => self.handle_start_game(),
         Message::ChallengeResult { answer, next_target } => self.handle_challenge_result(answer.clone(), next_target.to_owned(), current_challenge),
-        Message::EndOfCommunication =>self.handle_end_of_communication(stream),
+        Message::EndOfCommunication =>self.handle_end_of_communication(client_id),
         _ => panic!("Not implemented")
       }
   }
 
-  fn handle_subscribtion(&mut self, name: String, stream: &TcpStream) -> Option<MessageType> {
+  fn handle_subscribtion(&mut self, name: String, client_id: String) -> Option<MessageType> {
     let answer = if self.players.has_player_with_name(&name) {
       Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))
     } else {
       Message::SubscribeResult(SubscribeResult::Ok)
     };
-    let answer = MessageType::unicast(answer);
-    let stream_id =  stream.peer_addr().unwrap().to_string();
-    let player = Player::new(PublicPlayer::new(name, stream_id), stream.try_clone().unwrap());
-    self.players.add_player(player);
-    debug!("Answer: {:?}", answer);
+    self.players.activate_player(client_id.as_str());
+    let answer = MessageType::unicast(answer, client_id);
+    trace!("Answer: {:?}", answer);
     trace!("Players: {:?}", self.players);
     Some(answer)
   }
+  
 
-  fn handle_hello(&self) -> Option<MessageType> {
-    let answer = MessageType::unicast(Message::Welcome { version: 1 });
-    debug!("Answer: {:?}", answer);
+  fn handle_hello(&self, client_id: String) -> Option<MessageType> {
+    let answer = MessageType::unicast(Message::Welcome { version: 1 }, client_id);
+    trace!("Answer: {:?}", answer);
     Some(answer)
   }
 
@@ -70,13 +67,12 @@ impl MessageHandler {
     let start_game_message = Message::PublicLeaderBoard(self.players.get_players());
     debug!("Start Game Message: {:?}", start_game_message);
     let answer = MessageType::boardcast(start_game_message);
-    debug!("Answer: {:?}", answer);
+    trace!("Answer: {:?}", answer);
     Some(answer)
   }
 
-  fn handle_end_of_communication(&self, stream: &TcpStream) -> Option<MessageType> {
-    let answer = MessageType::unicast(Message::EndOfCommunication);
-    info!("stream id: {:?}", stream.peer_addr());
+  fn handle_end_of_communication(&self, client_id: String) -> Option<MessageType> {
+    let answer = MessageType::unicast(Message::EndOfCommunication, client_id);
     debug!("Answer: {:?}", answer);
     Some(answer)
   }

@@ -1,9 +1,7 @@
 extern crate rand;
-use std::io::Write;
-use log::trace;
 use rand::Rng;
 use std::{net::TcpStream, sync::{Mutex, Arc}};
-use shared::{public_player::PublicPlayer, message::Message};
+use shared::public_player::PublicPlayer;
 #[derive(Debug)]
 pub struct Player {
   pub info_public: PublicPlayer,
@@ -14,16 +12,8 @@ impl Player {
   pub fn new(info_public: PublicPlayer, tcp_stream: TcpStream) -> Player {
     Player {
       info_public,
-      tcp_stream,
+      tcp_stream
     }
-  }
-  pub fn send_message(&mut self, message: Message) {
-    let response = serde_json::to_string(&message).unwrap();
-    let response = response.as_bytes();
-    let response_size = response.len() as u32;
-    let response_length_as_bytes = response_size.to_be_bytes();
-    let result = self.tcp_stream.write(&[&response_length_as_bytes, response].concat());
-    trace!("byte write : {:?}, ", result);
   }
 }
 
@@ -70,10 +60,16 @@ impl PlayerList {
       }
     }
 
-    pub fn set_player_inactive(&mut self, stream: &TcpStream) {
+    pub fn unable_player(&mut self, stream: &TcpStream) {
       let index = self.players.lock().unwrap().iter().position(|p| p.info_public.stream_id == stream.peer_addr().unwrap().to_string());
       if let Some(index) = index {
         self.players.lock().unwrap()[index].info_public.is_active = false;
+      }
+    }
+    pub fn activate_player(&mut self, client_id: &str) {
+      let index = self.players.lock().unwrap().iter().position(|p| p.info_public.stream_id == client_id);
+      if let Some(index) = index {
+        self.players.lock().unwrap()[index].info_public.is_active = true;
       }
     }
 }
