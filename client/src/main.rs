@@ -228,12 +228,9 @@ impl Client {
                 SubscribeResult::Err(err) => {
                     panic!("{:?}", err);
                 }
-            },
-            Message::RoundSummary {
-                challenge: _,
-                chain: _,
-            } => {}
-            Message::EndOfGame { leader_board } => {
+            }
+            Message::RoundSummary { challenge: _, chain: _ } => {}
+        Message::EndOfGame { leader_board } => {
                 trace!("{:?}", leader_board);
                 thread_writer
                     .send(Message::EndOfGame { leader_board })

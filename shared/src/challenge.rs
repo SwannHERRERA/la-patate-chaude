@@ -114,3 +114,9 @@ pub enum ChallengeType {
     MD5HashCash(MD5HashCash),
     RecoverSecret(RecoverSecret),
 }
+
+#[derive(Debug, Clone)]
+pub enum GameType {
+    Hashcash,
+    RecoverSecret,
+}
