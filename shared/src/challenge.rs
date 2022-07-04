@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +29,7 @@ pub trait Challenge {
 }
 
 pub trait DictionaryChallenge: Challenge {
-    fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output;
+    fn solve_secret(&self, dictionary_hashmap: &HashSet<String>) -> Self::Output;
     fn solve_cheat(&self) -> Self::Output;
     fn solve_secret_cheat(&self) -> Self::Output;
 }
@@ -56,7 +56,7 @@ impl Challenge for MD5HashCash {
 }
 
 impl DictionaryChallenge for RecoverSecret {
-    fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output {
+    fn solve_secret(&self, dictionary_hashmap: &HashSet<String>) -> Self::Output {
         solve_secret_sentence_challenge(&self.0, dictionary_hashmap)
     }
 

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use rand::Rng;
 
@@ -197,26 +197,17 @@ pub fn word_count(string: &String) -> usize {
     string.split_whitespace().count()
 }
 
-pub fn generate_dictionary_hashmap(dictionary: &String) -> HashMap<char, Vec<String>> {
-    let mut dictionary_hashmap: HashMap<char, Vec<String>> = HashMap::new();
-    let mut current_char: char = ' ';
-    let mut word_vec: Vec<String> = Vec::new();
+pub fn generate_dictionary_hashmap(dictionary: &String) -> HashSet<String> {
+    let mut dictionary_hashmap: HashSet<String> = HashSet::new();
 
     dictionary.split_whitespace().for_each(|word| {
-        if word.chars().nth(0).unwrap() != current_char {
-            dictionary_hashmap.insert(current_char, word_vec.clone());
-            current_char = word.chars().nth(0).unwrap();
-            word_vec = Vec::new();
-            word_vec.push(word.to_string());
-        } else {
-            word_vec.push(word.to_string());
-        }
+        dictionary_hashmap.insert(word.to_string());
     });
 
     return dictionary_hashmap;
 }
 
-pub fn is_word_in_dictionary(word: &String, dictionary: &HashMap<char, Vec<String>>) -> bool {
+pub fn is_word_in_dictionary(word: &String, dictionary: &HashMap<char, HashSet<String>>) -> bool {
     let first_char = word.chars().next().unwrap();
     if dictionary.contains_key(&first_char) {
         let word_vec = dictionary.get(&first_char).unwrap();
