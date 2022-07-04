@@ -16,15 +16,13 @@ use log::{debug, error, trace, warn};
 use rand;
 use rand::Rng;
 
+use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType, DictionaryChallenge};
 use shared::config::{IP, LOG_LEVEL, PORT};
 use shared::message::Message::ChallengeResult;
-use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
-use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType};
-use shared::config::{IP, LOG_LEVEL, PORT};
 use shared::message::{Message, PublicLeaderBoard};
 use shared::subscribe::SubscribeResult;
-use utils::file_utils::{read_file, read_file_macro};
+use utils::file_utils::read_file_macro;
 use utils::string_utils::generate_dictionary_hashmap;
 
 use crate::strategies::{
@@ -57,6 +55,10 @@ pub struct ClientArgs {
     /// The number of seed incrementation
     #[clap(long, value_parser, default_value_t = 1000)]
     thread_seed_slice: u64,
+
+    /// If use dictionary for recover secret challenge
+    #[clap(long, value_parser, default_value_t = false)]
+    pub load_dictionary: bool,
 }
 
 fn main() {
@@ -66,16 +68,15 @@ fn main() {
     std::env::set_var("RUST_LOG", LOG_LEVEL);
     let address = SocketAddr::from((IP, PORT));
 
-    // Retrieve start args
-    let args: Vec<String> = std::env::args().collect();
-    let load_dictionary = args.contains(&"--dictionary".to_string());
-
     match TcpStream::connect(address) {
         Ok(stream) => {
-            let client = Client::new(args.username, load_dictionary);
+            let client = Client::new(args.username, args.load_dictionary);
             client.start_threads(stream);
         }
-        Err(_) => panic!("Could not connect to server {:?} on port {}", args.ip, args.port),
+        Err(_) => panic!(
+            "Could not connect to server {:?} on port {}",
+            args.ip, args.port
+        ),
     }
 }
 
@@ -105,8 +106,6 @@ pub struct Client {
 impl Client {
     fn new(username: String, load_dictionary: bool) -> Client {
         let mut rng = rand::thread_rng();
-        let n1: u8 = rng.gen();
-        let username = "test".to_string() + &*n1.to_string();
         // Load dictionary file
         let dictionary_hashmap;
         if load_dictionary {
@@ -213,7 +212,10 @@ impl Client {
                     panic!("{:?}", err);
                 }
             },
-            Message::RoundSummary { challenge, chain } => {}
+            Message::RoundSummary {
+                challenge: _,
+                chain: _,
+            } => {}
             Message::EndOfGame { leader_board } => {
                 trace!("{:?}", leader_board);
                 thread_writer
