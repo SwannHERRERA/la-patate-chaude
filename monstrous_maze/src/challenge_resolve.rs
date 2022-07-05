@@ -6,18 +6,17 @@ use crate::models::{MonstrousMazeInput, MonstrousMazeMap, MonstrousMazeOutput, P
 
 pub struct MonstrousMazeResolver;
 
-static PLAYER_TOKEN: char = 'Y';
+static PLAYER_TOKEN: char = 'I';
 static EXIT_TOKEN: char = 'X';
 // static FREE_TOKEN: char = ' ';
-static WALL_TOKENS: [&'static char; 11] = [
-    &'┐', &'┴', &'┌', &'┤', &'└', &'├', &'┬', &'│', &'┘', &'─', &'┼',
-];
+static WALL_TOKEN: char = '#';
 static MONSTER_TOKEN: char = 'M';
 
 impl MonstrousMazeResolver {
     pub fn resolve_monstrous_maze_challenge(
         monstrous_maze_input: &MonstrousMazeInput,
     ) -> MonstrousMazeOutput {
+        debug!("{:?}", monstrous_maze_input.grid);
         let endurance_left = monstrous_maze_input.endurance;
         let map = get_monstrous_maze_map_from_input(monstrous_maze_input);
 
@@ -171,7 +170,9 @@ fn process_down_path(
     None
 }
 
-fn get_monstrous_maze_map_from_input(monstrous_maze_input: &MonstrousMazeInput) -> MonstrousMazeMap {
+fn get_monstrous_maze_map_from_input(
+    monstrous_maze_input: &MonstrousMazeInput,
+) -> MonstrousMazeMap {
     let map: Vec<String> = monstrous_maze_input
         .grid
         .split("\n")
@@ -305,7 +306,7 @@ fn can_go_left(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> b
 }
 
 fn is_wall(char: &char) -> bool {
-    WALL_TOKENS.contains(&char)
+    *char == WALL_TOKEN
 }
 
 fn is_player_on_monster_position(map: &MonstrousMazeMap) -> bool {

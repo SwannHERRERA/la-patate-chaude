@@ -106,6 +106,9 @@ fn solve_challenge(
                 }
             }
         }
+        ChallengeType::MonstrousMaze(challenge) => {
+            ChallengeAnswer::MonstrousMaze(challenge.solve())
+        }
     }
 }
 
