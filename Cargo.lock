@@ -416,6 +416,8 @@ dependencies = [
 name = "monstrous_maze"
 version = "0.1.0"
 dependencies = [
+ "log",
+ "pretty_env_logger",
  "serde",
  "utils",
 ]
