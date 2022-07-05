@@ -1,4 +1,3 @@
-use std::process::exit;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::atomic::AtomicU64;

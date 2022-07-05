@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -6,6 +6,7 @@ use hashcash::{
     dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput},
     hashcash::Hashcash,
 };
+use recover_secret::challenge_generator::validate_challenge;
 use recover_secret::challenge_resolve::{
     solve_secret_sentence_challenge, solve_secret_sentence_challenge_cheat,
     solve_secret_string_challenge, solve_secret_string_challenge_cheat,
@@ -28,7 +29,7 @@ pub trait Challenge {
 }
 
 pub trait DictionaryChallenge: Challenge {
-    fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output;
+    fn solve_secret(&self, dictionary_hashmap: &HashSet<String>) -> Self::Output;
     fn solve_cheat(&self) -> Self::Output;
     fn solve_secret_cheat(&self) -> Self::Output;
 }
@@ -55,7 +56,7 @@ impl Challenge for MD5HashCash {
 }
 
 impl DictionaryChallenge for RecoverSecret {
-    fn solve_secret(&self, dictionary_hashmap: &HashMap<char, Vec<String>>) -> Self::Output {
+    fn solve_secret(&self, dictionary_hashmap: &HashSet<String>) -> Self::Output {
         solve_secret_sentence_challenge(&self.0, dictionary_hashmap)
     }
 
@@ -84,8 +85,8 @@ impl Challenge for RecoverSecret {
         solve_secret_string_challenge(&self.0)
     }
 
-    fn verify(&self, _: Self::Output) -> bool {
-        todo!()
+    fn verify(&self, result: Self::Output) -> bool {
+        validate_challenge(&self.0, &result)
     }
 }
 
@@ -113,4 +114,10 @@ pub struct ReportedChallengeResult {
 pub enum ChallengeType {
     MD5HashCash(MD5HashCash),
     RecoverSecret(RecoverSecret),
+}
+
+#[derive(Debug, Clone)]
+pub enum GameType {
+    HashCash,
+    RecoverSecret,
 }

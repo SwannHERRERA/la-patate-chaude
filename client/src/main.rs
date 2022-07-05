@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashSet};
 use std::net::{Shutdown, SocketAddr};
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
@@ -86,7 +86,7 @@ fn main() {
 
 fn solve_challenge(
     challenge: ChallengeType,
-    dictionary_hashmap: &Option<HashMap<char, Vec<String>>>,
+    dictionary_hashmap: &Option<HashSet<String>>,
     cheat: &bool,
 ) -> ChallengeAnswer {
     match challenge {
@@ -113,7 +113,7 @@ pub struct Client {
     public_leader_board: PublicLeaderBoard,
     username: String,
     next_target_strategy: TargetStrategyType,
-    dictionary_hashmap: Option<HashMap<char, Vec<String>>>,
+    dictionary_hashmap: Option<HashSet<String>>,
     cheat: bool,
 }
 
@@ -228,12 +228,9 @@ impl Client {
                 SubscribeResult::Err(err) => {
                     panic!("{:?}", err);
                 }
-            },
-            Message::RoundSummary {
-                challenge: _,
-                chain: _,
-            } => {}
-            Message::EndOfGame { leader_board } => {
+            }
+            Message::RoundSummary { challenge: _, chain: _ } => {}
+        Message::EndOfGame { leader_board } => {
                 trace!("{:?}", leader_board);
                 thread_writer
                     .send(Message::EndOfGame { leader_board })

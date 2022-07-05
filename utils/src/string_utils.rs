@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
+use rand::Rng;
 
 pub fn get_string_after_last_occurrence(string: &String, character: &char) -> String {
     let mut new_string = String::new();
@@ -195,26 +197,17 @@ pub fn word_count(string: &String) -> usize {
     string.split_whitespace().count()
 }
 
-pub fn generate_dictionary_hashmap(dictionary: &String) -> HashMap<char, Vec<String>> {
-    let mut dictionary_hashmap: HashMap<char, Vec<String>> = HashMap::new();
-    let mut current_char: char = ' ';
-    let mut word_vec: Vec<String> = Vec::new();
+pub fn generate_dictionary_hashmap(dictionary: &String) -> HashSet<String> {
+    let mut dictionary_hashmap: HashSet<String> = HashSet::new();
 
     dictionary.split_whitespace().for_each(|word| {
-        if word.chars().nth(0).unwrap() != current_char {
-            dictionary_hashmap.insert(current_char, word_vec.clone());
-            current_char = word.chars().nth(0).unwrap();
-            word_vec = Vec::new();
-            word_vec.push(word.to_string());
-        } else {
-            word_vec.push(word.to_string());
-        }
+        dictionary_hashmap.insert(word.to_string());
     });
 
     return dictionary_hashmap;
 }
 
-pub fn is_word_in_dictionary(word: &String, dictionary: &HashMap<char, Vec<String>>) -> bool {
+pub fn is_word_in_dictionary(word: &String, dictionary: &HashMap<char, HashSet<String>>) -> bool {
     let first_char = word.chars().next().unwrap();
     if dictionary.contains_key(&first_char) {
         let word_vec = dictionary.get(&first_char).unwrap();
@@ -286,6 +279,28 @@ pub fn find_n_utf8(s: &str, chr: char, n: &usize) -> Option<usize> {
         index += 1;
     }
     None
+}
+
+pub fn generate_random_tuple(length: &usize) -> Vec<char> {
+    let mut rng = rand::thread_rng();
+    let mut random_string = Vec::new();
+    for _ in 0..*length {
+        // random char, only letters
+        random_string.push(rng.sample(rand::distributions::Alphanumeric) as char);
+    }
+    random_string
+}
+
+pub fn is_sequence_valid(string: &String, sequence: &Vec<char>) -> bool {
+    let mut string_check = string.clone();
+    for char in sequence {
+        if !is_present(&string_check, char) {
+            return false;
+        }
+        string_check = get_string_after_first_occurrence(&string_check, char);
+    }
+
+    true
 }
 
 #[cfg(test)]

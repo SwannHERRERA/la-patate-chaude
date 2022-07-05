@@ -1,16 +1,16 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 use utils::string_utils::{
     add_char_at_index, add_spaces_in_sequence, get_string_after_last_occurrence,
     get_string_after_vec_sequence, get_string_before_last_occurrence,
-    get_string_before_vec_sequence_inclusive, is_present, is_word_in_dictionary, word_count,
+    get_string_before_vec_sequence_inclusive, is_present, word_count,
 };
 
 use crate::models::{RecoverSecretInput, RecoverSecretOutput};
 
 pub fn solve_secret_sentence_challenge(
     input: &RecoverSecretInput,
-    dictionary: &HashMap<char, Vec<String>>,
+    dictionary: &HashSet<String>,
 ) -> RecoverSecretOutput {
     println!("Solving challenge...\n{:?}", input);
     let mut tuples = retrieve_tuples_from_letters(&input);
@@ -33,13 +33,19 @@ pub fn solve_secret_string_challenge(input: &RecoverSecretInput) -> RecoverSecre
     let secret_sentence = retrieve_secret_sentence_from_tuples(
         &mut tuples,
         &input.word_count,
-        &HashMap::new(),
+        &HashSet::new(),
         &false,
     );
     RecoverSecretOutput { secret_sentence }
 }
 
-fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
+pub fn solve_secret_string_challenge_cheat(input: &RecoverSecretInput) -> RecoverSecretOutput {
+    // println!("Solving challenge...\n{:?}", input);
+    let secret_sentence = find_sequence(&vec![input.letters.to_string()], &input.word_count);
+    RecoverSecretOutput { secret_sentence }
+}
+
+pub fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
     let mut tuples: Vec<Vec<char>> = Vec::new();
     let mut current_index = 0;
     input.tuple_sizes.iter().for_each(|size| {
@@ -56,7 +62,7 @@ fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>> {
 fn retrieve_secret_sentence_from_tuples(
     tuples: &mut Vec<Vec<char>>,
     nb_words: &usize,
-    dictionary: &HashMap<char, Vec<String>>,
+    dictionary: &HashSet<String>,
     is_sentence_valid: &bool,
 ) -> String {
     let propositions =
@@ -104,10 +110,10 @@ fn retrieve_possible_strings_from_tuples(
     is_sentence_valid: &bool,
 ) -> Vec<String> {
     if tuples.is_empty() {
-        println!("{} propositions found.", propositions.len());
+        // println!("{} propositions found.", propositions.len());
         return propositions.clone();
     } else if propositions.len() > 0 {
-        println!("{} propositions found.", propositions.len());
+        // println!("{} propositions found.", propositions.len());
     }
 
     let tuple = tuples.remove(0);
@@ -136,7 +142,7 @@ fn retrieve_possible_strings_from_tuple(
     let mut other_propositions: Vec<String> = Vec::new();
     propositions.iter().for_each(|proposition| {
         let mut new_propositions =
-            retrieve_possible_strings_from_string(&tuple, proposition, nb_words, is_sentence_valid);
+        retrieve_possible_strings_from_string(&tuple, proposition, nb_words, is_sentence_valid);
         other_propositions.append(&mut new_propositions);
     });
     other_propositions
@@ -190,13 +196,12 @@ fn retrieve_possible_strings_from_string(
                 )
             }
         }
-
         propositions = new_propositions;
     });
     propositions
 }
 
-fn process_middle_element_of_tuple(
+fn process_middle_element_of_tuple( // problem is when future seq is present but not fully yet
     tuple: &Vec<char>,
     nb_words: &usize,
     propositions: &Vec<String>,
@@ -217,7 +222,7 @@ fn process_middle_element_of_tuple(
 
         is_next_char_present = is_present(&new_proposition, next_char);
 
-        if is_next_char_present {
+        if is_next_char_present && (*next_char != ' ' || word_count(proposition) == *nb_words) {
             new_proposition = get_string_before_last_occurrence(&new_proposition, next_char);
         }
 
@@ -225,23 +230,28 @@ fn process_middle_element_of_tuple(
 
         if !is_current_char_present {
             if *compute_all_possibilities {
-                for i in 0..new_proposition.len() + 1 {
-                    if i == 0
-                        && new_proposition.len() > 0
-                        && new_proposition.chars().nth(0).unwrap().is_uppercase()
-                    {
-                        continue;
+                if !(is_next_char_present && next_char == current_char) {
+                    for i in 0..new_proposition.len() + 1 {
+                        if i == 0
+                            && new_proposition.len() > 0
+                            && new_proposition.chars().nth(0).unwrap().is_uppercase()
+                        {
+                            continue;
+                        }
+                        let final_proposition =
+                            add_char_at_index(&new_proposition, &current_char, &i);
+                        push_proposition_with_string_between_chars(
+                            &mut new_propositions,
+                            &previous_sequence,
+                            next_char,
+                            &is_next_char_present,
+                            proposition,
+                            &final_proposition,
+                            &nb_words,
+                        );
                     }
-                    let final_proposition = add_char_at_index(&new_proposition, &current_char, &i);
-                    push_proposition_with_string_between_chars(
-                        &mut new_propositions,
-                        &previous_sequence,
-                        next_char,
-                        &is_next_char_present,
-                        proposition,
-                        &final_proposition,
-                        &nb_words,
-                    );
+                } else {
+                    new_propositions.push(proposition.clone());
                 }
             } else {
                 new_proposition.push(*current_char);
@@ -271,7 +281,7 @@ fn process_last_element_of_tuple(
     compute_all_possibilities: &bool,
 ) {
     let previous_sequence: Vec<char> = tuple.iter().take(index).map(|c| *c).collect();
-
+    // println!("Current vec : {:?}", tuple);
     propositions.iter().for_each(|proposition| {
         let mut new_proposition = get_string_after_vec_sequence(proposition, &previous_sequence);
         // let is_previous_char_present = is_present(proposition, previous_char);
@@ -355,7 +365,7 @@ fn process_first_element_of_tuple_one_element(
         if !is_present(&new_proposition, current_char) {
             if *compute_all_possibilities {
                 if current_char.is_uppercase() {
-                    new_propositions.push(add_char_at_index(&new_proposition, current_char, &0))
+                    new_propositions.push(add_char_at_index(&proposition, current_char, &0))
                 } else {
                     for i in 0..new_proposition.len() + 1 {
                         if i == 0
@@ -404,7 +414,7 @@ fn process_first_element_of_tuple_more_than_one_element(
         if !is_current_char_present {
             if *compute_all_possibilities {
                 if current_char.is_uppercase() {
-                    new_propositions.push(add_char_at_index(&new_proposition, current_char, &0))
+                    new_propositions.push(add_char_at_index(&proposition, current_char, &0))
                 } else {
                     for i in 0..new_proposition.len() + 1 {
                         if i == 0
@@ -455,12 +465,14 @@ fn push_proposition_with_string_between_chars(
         get_string_before_vec_sequence_inclusive(proposition, &previous_sequence);
     final_proposition.push_str(&new_proposition);
 
-    if *is_next_char_present {
+    if *is_next_char_present && (*next_char != ' ' || word_count(proposition) == *nb_words)  {
         let tmp = get_string_after_last_occurrence(proposition, next_char);
         final_proposition.push(*next_char);
         final_proposition.push_str(&tmp);
     }
-    // println!("'{}' -> '{}'", proposition, final_proposition);
+    // if proposition.contains("Il ") {
+    //     println!("'{}' -> '{}'\nNext char : '{}'", proposition, final_proposition, next_char);
+    // }
 
     if word_count(&final_proposition) <= *nb_words {
         new_propositions.push(final_proposition);
@@ -504,31 +516,33 @@ fn push_proposition_with_string_after_char(
     }
 }
 
-fn find_sentence(possibilities: &Vec<String>, dictionary: &HashMap<char, Vec<String>>) -> String {
-    println!("Searching for a sentence...");
-    let mut invalid_words: Vec<String> = Vec::new();
+fn find_sentence(possibilities: &Vec<String>, dictionary: &HashSet<String>) -> String {
+    // println!("Searching for a sentence...");
+    let mut invalid_words: HashSet<String> = HashSet::new();
     for possibility in possibilities {
-        let mut founded = true;
-        let words: Vec<String> = possibility
+        let words: HashSet<String> = possibility
             .to_lowercase()
             .split(|c: char| c == ' ' || c == '-')
             .map(|s| s.to_string())
             .collect();
 
-        if words.iter().any(|word| invalid_words.contains(&word)) {
+        if words.intersection(&invalid_words).count() > 0 {
             continue;
         }
 
-        for word in words {
-            if !is_word_in_dictionary(&word, dictionary) {
-                founded = false;
-                invalid_words.push(word);
-                break;
-            }
+        let wrong_words: HashSet<String> = words
+            .difference(dictionary)
+            .map(|s| s.to_string())
+            .collect();
+
+        if wrong_words.len() > 0 {
+            wrong_words.iter().for_each(|wrong_word| {
+                invalid_words.insert(wrong_word.clone());
+            });
+            continue;
         }
-        if founded {
-            return possibility.clone();
-        }
+
+        return possibility.clone();
     }
     panic!("No sentence found");
 }
@@ -572,6 +586,17 @@ mod tests {
                 .parse()
                 .unwrap(),
             tuple_sizes: vec![8, 3, 4, 4, 6, 5, 4, 7, 7],
+        };
+
+        let answer = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
+        assert_eq!(answer.secret_sentence, "Il fait froid".to_string());
+
+        let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
+            word_count: 3,
+            letters: "I fitfrli fiti ffrdIa fril t ofat ofa fIl fo"
+                .parse()
+                .unwrap(),
+            tuple_sizes: vec![7, 4, 3, 5, 6, 5, 5, 4, 5],
         };
 
         let answer = solve_secret_sentence_challenge(&recover_secret_input, &dictionary_hashmap);
