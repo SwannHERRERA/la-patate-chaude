@@ -60,52 +60,112 @@ fn find_path(
     let mut new_already_visited = already_visited.clone();
     new_already_visited.insert(map.player_position.clone());
 
-    if can_go_up(map, already_visited) {
-        let mut new_map = map.clone();
-        let mut new_path = current_path.clone();
-        new_map.player_position.y -= 1;
-        new_path.push_str("^");
-
-        let result = find_path(&new_map, endurance_left, &new_path, &new_already_visited);
-        if result.is_some() {
-            return result;
-        }
+    if let Some(path) = process_up_path(
+        map,
+        &new_endurance_left,
+        &current_path,
+        &new_already_visited,
+    ) {
+        return Some(path);
     }
 
-    if can_go_down(map, already_visited) {
-        let mut new_map = map.clone();
-        let mut new_path = current_path.clone();
-        new_map.player_position.y += 1;
-        new_path.push_str("v");
-
-        let result = find_path(&new_map, endurance_left, &new_path, &new_already_visited);
-        if result.is_some() {
-            return result;
-        }
+    if let Some(path) = process_down_path(
+        map,
+        &new_endurance_left,
+        &current_path,
+        &new_already_visited,
+    ) {
+        return Some(path);
     }
 
-    if can_go_left(map, already_visited) {
-        let mut new_map = map.clone();
-        let mut new_path = current_path.clone();
-        new_map.player_position.x -= 1;
-        new_path.push_str("<");
-
-        let result = find_path(&new_map, endurance_left, &new_path, &new_already_visited);
-        if result.is_some() {
-            return result;
-        }
+    if let Some(path) = process_left_path(
+        map,
+        &new_endurance_left,
+        &current_path,
+        &new_already_visited,
+    ) {
+        return Some(path);
     }
 
+    if let Some(path) = process_right_path(
+        map,
+        &new_endurance_left,
+        &current_path,
+        &new_already_visited,
+    ) {
+        return Some(path);
+    }
+
+    None
+}
+
+fn process_right_path(
+    map: &MonstrousMazeMap,
+    endurance_left: &u8,
+    current_path: &String,
+    already_visited: &HashSet<Position>,
+) -> Option<String> {
     if can_go_right(map, already_visited) {
         let mut new_map = map.clone();
         let mut new_path = current_path.clone();
         new_map.player_position.x += 1;
         new_path.push_str(">");
 
-        let result = find_path(&new_map, endurance_left, &new_path, &new_already_visited);
-        if result.is_some() {
-            return result;
-        }
+        return find_path(&new_map, endurance_left, &new_path, &already_visited);
+    }
+
+    None
+}
+
+fn process_left_path(
+    map: &MonstrousMazeMap,
+    endurance_left: &u8,
+    current_path: &String,
+    already_visited: &HashSet<Position>,
+) -> Option<String> {
+    if can_go_left(map, already_visited) {
+        let mut new_map = map.clone();
+        let mut new_path = current_path.clone();
+        new_map.player_position.x -= 1;
+        new_path.push_str("<");
+
+        return find_path(&new_map, endurance_left, &new_path, &already_visited);
+    }
+
+    None
+}
+
+fn process_up_path(
+    map: &MonstrousMazeMap,
+    endurance_left: &u8,
+    current_path: &String,
+    already_visited: &HashSet<Position>,
+) -> Option<String> {
+    if can_go_up(map, already_visited) {
+        let mut new_map = map.clone();
+        let mut new_path = current_path.clone();
+        new_map.player_position.y -= 1;
+        new_path.push_str("^");
+
+        return find_path(&new_map, endurance_left, &new_path, &already_visited);
+    }
+
+    None
+}
+
+fn process_down_path(
+    map: &MonstrousMazeMap,
+    endurance_left: &u8,
+    current_path: &String,
+    already_visited: &HashSet<Position>,
+) -> Option<String> {
+    if can_go_down(map, already_visited) {
+        let mut new_map = map.clone();
+        let mut new_path = current_path.clone();
+        new_map.player_position.y += 1;
+        new_path.push_str("v");
+
+        return find_path(&new_map, endurance_left, &new_path, &already_visited);
     }
 
     None
