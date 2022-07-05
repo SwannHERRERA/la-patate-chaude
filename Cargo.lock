@@ -416,8 +416,10 @@ dependencies = [
 name = "monstrous_maze"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "log",
  "pretty_env_logger",
+ "rand",
  "serde",
  "utils",
 ]
