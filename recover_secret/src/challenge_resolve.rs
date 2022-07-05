@@ -68,7 +68,7 @@ fn retrieve_secret_sentence_from_tuples(
     let propositions =
         retrieve_possible_strings_from_tuples(tuples, &mut Vec::new(), nb_words, is_sentence_valid);
 
-    display_possibilities(&propositions);
+    // display_possibilities(&propositions);
 
     if propositions.len() > 0 {
         if *is_sentence_valid {
@@ -142,7 +142,7 @@ fn retrieve_possible_strings_from_tuple(
     let mut other_propositions: Vec<String> = Vec::new();
     propositions.iter().for_each(|proposition| {
         let mut new_propositions =
-        retrieve_possible_strings_from_string(&tuple, proposition, nb_words, is_sentence_valid);
+            retrieve_possible_strings_from_string(&tuple, proposition, nb_words, is_sentence_valid);
         other_propositions.append(&mut new_propositions);
     });
     other_propositions
@@ -201,7 +201,8 @@ fn retrieve_possible_strings_from_string(
     propositions
 }
 
-fn process_middle_element_of_tuple( // problem is when future seq is present but not fully yet
+fn process_middle_element_of_tuple(
+    // problem is when future seq is present but not fully yet
     tuple: &Vec<char>,
     nb_words: &usize,
     propositions: &Vec<String>,
@@ -465,7 +466,7 @@ fn push_proposition_with_string_between_chars(
         get_string_before_vec_sequence_inclusive(proposition, &previous_sequence);
     final_proposition.push_str(&new_proposition);
 
-    if *is_next_char_present && (*next_char != ' ' || word_count(proposition) == *nb_words)  {
+    if *is_next_char_present && (*next_char != ' ' || word_count(proposition) == *nb_words) {
         let tmp = get_string_after_last_occurrence(proposition, next_char);
         final_proposition.push(*next_char);
         final_proposition.push_str(&tmp);
