@@ -40,14 +40,14 @@ impl MessageHandler {
     };
     let answer = MessageType::unicast(answer, client_id.clone());
     self.players.activate_player(client_id.as_str());
-    debug!("Answer: {:?}", answer);
+    trace!("Answer: {:?}", answer);
     trace!("Players: {:?}", self.players);
     answer
   }
 
   fn handle_hello(&self, client_id: String) -> MessageType {
     let answer = MessageType::unicast(Message::Welcome { version: 1 }, client_id);
-    debug!("Answer: {:?}", answer);
+    trace!("Answer: {:?}", answer);
     answer
   }
 
@@ -55,14 +55,14 @@ impl MessageHandler {
     let start_game_message = Message::PublicLeaderBoard(self.players.get_players());
     debug!("Start Game Message: {:?}", start_game_message);
     let answer = MessageType::boardcast(start_game_message);
-    debug!("Answer: {:?}", answer);
+    trace!("Answer: {:?}", answer);
     answer
   }
 
   fn handle_end_of_communication(&self, client_id: String) -> MessageType {
     let answer = MessageType::unicast(Message::EndOfCommunication, client_id.clone());
     info!("end of com with client id: {:?}", client_id);
-    debug!("Answer: {:?}", answer);
+    trace!("Answer: {:?}", answer);
     answer
   }
 

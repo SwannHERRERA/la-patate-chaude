@@ -17,12 +17,12 @@ impl PublicPlayer {
       stream_id,
       score: 0,
       steps: 0,
-      is_active: true,
+      is_active: false,
       total_used_time: 0.0,
     }
   }
-  pub fn make_inactive(&mut self) {
-    self.is_active = false;
+  pub fn make_active(&mut self) {
+    self.is_active = true;
   }
 }
 
@@ -35,13 +35,13 @@ mod tests {
     assert_eq!(player.name, "Test");
     assert_eq!(player.score, 0);
     assert_eq!(player.steps, 0);
-    assert_eq!(player.is_active, true);
+    assert_eq!(player.is_active, false);
     assert_eq!(player.total_used_time, 0.0);
   }
   #[test]
   fn test_set_active() {
     let mut player = PublicPlayer::new("Test".to_string(), "127.0.0.1:1234".to_string());
-    player.make_inactive();
-    assert_eq!(player.is_active, false);
+    player.make_active();
+    assert_eq!(player.is_active, true);
   }
 }
