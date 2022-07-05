@@ -84,6 +84,7 @@ version = "0.1.0"
 dependencies = [
  "hashcash",
  "log",
+ "pretty_env_logger",
  "rand",
  "serde",
  "serde_json",
