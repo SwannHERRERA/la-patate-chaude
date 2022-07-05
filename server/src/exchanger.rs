@@ -1,44 +1,36 @@
-use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::{Read, Write}};
+use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::Read};
 
 use hashcash::dto::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info};
-use shared::{message::{Message, ResponseType, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
+use shared::{message::{Message, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
 
 use crate::message_handler::MessageHandler;
 
 pub struct Exchanger {
   message_handler: MessageHandler,
-  tx: Sender<Message>,
+  tx: Sender<MessageType>,
 }
 
 impl Exchanger {
 
-  pub fn new(message_handler: MessageHandler, tx: Sender<Message>) -> Exchanger {
+  pub fn new(message_handler: MessageHandler, tx: Sender<MessageType>) -> Exchanger {
     Exchanger { message_handler, tx }
   }
 
   pub fn hold_communcation(&mut self, stream: TcpStream) {
-    info!("peer address={:?}", stream.peer_addr());
-    loop  {
+    let client_id = stream.peer_addr().unwrap().to_string();
+    info!("peer address={:?}", &client_id);
+    loop {
       let parsed_message = self.parse_message_from_tcp_stream(&stream);
-      let response = self.message_handler.handle_message(parsed_message, &stream, self.message_handler.get_challenge());
+      let response = self.message_handler.handle_message(parsed_message, client_id.clone(), self.message_handler.get_challenge());
       if matches!(response.message, Message::EndOfCommunication) {
         break;
       }
-      match response.message_type {
-        ResponseType::Broadcast => {
-          trace!("Broadcast: {:?}", response.message);
-          let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
-          self.tx.send(response.message).unwrap();
-          if  is_start_round{
-            let challenge_message = self.start_round();
-            self.tx.send(challenge_message.message).unwrap();
-          }
-        }
-        ResponseType::Unicast => {
-          trace!("Unicast: {:?}", response.message);
-          self.send_response(response.message, &stream);
-        }
+      let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
+      self.tx.send(response).unwrap();
+      if is_start_round {
+        let challenge_message = self.start_round();
+        self.tx.send(challenge_message).unwrap();
       }
     }
     let shutdown_result = stream.shutdown(Shutdown::Both);
@@ -63,15 +55,6 @@ impl Exchanger {
         Message::EndOfCommunication
       },
     }
-  }
-
-  pub fn send_response(&self, response: Message, mut tcp_stream: &TcpStream) {
-    let response = serde_json::to_string(&response).unwrap();
-    let response = response.as_bytes();
-    let response_size = response.len() as u32;
-    let response_length_as_bytes = response_size.to_be_bytes();
-    let result = tcp_stream.write(&[&response_length_as_bytes, response].concat());
-    trace!("byte write : {:?}, ", result);
   }
 
   fn start_round(&self) -> MessageType {

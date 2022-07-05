@@ -1,14 +1,15 @@
 use crate::exchanger::Exchanger;
 use crate::message_handler::MessageHandler;
 use crate::player::PlayerList;
+use crate::utils::send_response;
 use std::io::Write;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::{self, JoinHandle};
-use log::{info, trace, debug};
+use log::{info, debug, warn};
 use shared::challenge::ChallengeType;
 use shared::config::{PORT, IP};
-use shared::message::Message;
+use shared::message::{MessageType, ResponseType};
 
 pub struct Server {
   listener: TcpListener,
@@ -23,7 +24,7 @@ impl Server {
 
   pub fn listen(&mut self) {
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
-    let (tx, rx) = mpsc::channel::<Message>();
+    let (tx, rx) = mpsc::channel::<MessageType>();
 
     handles.push(self.listen_broadcast(rx));
 
@@ -45,32 +46,35 @@ impl Server {
     }
   }
 
-  fn listen_broadcast(&self, rx: mpsc::Receiver<Message>) -> JoinHandle<()> {
-    let players = self.players.players.clone();
+  fn listen_broadcast(&self, rx: mpsc::Receiver<MessageType>) -> JoinHandle<()> {
+    let players = self.players.clone();
     info!("players {:?}", self.players.get_players());
-    let broadcast_reciever = thread::spawn(move || loop {
+    thread::spawn(move || loop {
       match rx.recv() {
         Ok(msg) => {
-          let mut players = players.lock().unwrap();
-          info!("rx recieve : {:?}", msg);
-          for player in players.iter_mut() {
-
-            let response = serde_json::to_string(&msg).unwrap();
-            let response = response.as_bytes();
-            let response_size = response.len() as u32;
-            let response_length_as_bytes = response_size.to_be_bytes();
-            let result = player.tcp_stream.write(&[&response_length_as_bytes, response].concat());
-
-            trace!("byte write : {:?}, ", result);
-          }
+          info!("rx recieve : {:?}", &msg);
+          match msg.message_type {
+            ResponseType::Broadcast => {
+              let mut players = players.players.lock().unwrap();
+              for player in players.iter_mut() {
+                send_response(msg.message.clone(), &player.tcp_stream);
+              }
+            }
+            ResponseType::Unicast { client_id } => {
+              let player = players.get_and_remove_player_by_stream_id(client_id);
+              match player {
+                Some(player) => send_response(msg.message, &player.tcp_stream),
+                None => warn!("player not found"),
+              }
+            }
+         };
         }
         Err(err) => {
           info!("rx recieve error : {:?}", err);
           break;
         }
       }
-    });
-    broadcast_reciever
+    })
   }
 }
 
