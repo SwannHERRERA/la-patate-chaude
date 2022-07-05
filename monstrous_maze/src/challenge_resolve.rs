@@ -4,7 +4,7 @@ use log::debug;
 
 use crate::models::{MonstrousMazeInput, MonstrousMazeMap, MonstrousMazeOutput, Position};
 
-pub struct MonstrousMaze;
+pub struct MonstrousMazeResolver;
 
 static PLAYER_TOKEN: char = 'Y';
 static EXIT_TOKEN: char = 'X';
@@ -14,9 +14,9 @@ static WALL_TOKENS: [&'static char; 11] = [
 ];
 static MONSTER_TOKEN: char = 'M';
 
-impl MonstrousMaze {
+impl MonstrousMazeResolver {
     pub fn resolve_monstrous_maze_challenge(
-        monstrous_maze_input: MonstrousMazeInput,
+        monstrous_maze_input: &MonstrousMazeInput,
     ) -> MonstrousMazeOutput {
         let endurance_left = monstrous_maze_input.endurance;
         let map = get_monstrous_maze_map_from_input(monstrous_maze_input);
@@ -171,7 +171,7 @@ fn process_down_path(
     None
 }
 
-fn get_monstrous_maze_map_from_input(monstrous_maze_input: MonstrousMazeInput) -> MonstrousMazeMap {
+fn get_monstrous_maze_map_from_input(monstrous_maze_input: &MonstrousMazeInput) -> MonstrousMazeMap {
     let map: Vec<String> = monstrous_maze_input
         .grid
         .split("\n")

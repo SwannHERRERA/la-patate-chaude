@@ -1,5 +1,5 @@
 use std::time::Instant;
-use monstrous_maze::challenge_resolve::MonstrousMaze;
+use monstrous_maze::challenge_resolve::MonstrousMazeResolver;
 use monstrous_maze::models::MonstrousMazeInput;
 
 fn main() {
@@ -49,7 +49,7 @@ fn main() {
 
     println!("Challenge on :\n{}", grid);
     let i = Instant::now();
-    let output = MonstrousMaze::resolve_monstrous_maze_challenge(MonstrousMazeInput {
+    let output = MonstrousMazeResolver::resolve_monstrous_maze_challenge(&MonstrousMazeInput {
         grid,
         endurance: 2,
     });
