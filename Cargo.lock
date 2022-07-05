@@ -743,6 +743,7 @@ name = "shared"
 version = "0.1.0"
 dependencies = [
  "hashcash",
+ "monstrous_maze",
  "rand",
  "recover_secret",
  "serde",
