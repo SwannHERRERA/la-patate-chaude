@@ -319,4 +319,31 @@ fn is_player_on_monster_position(map: &MonstrousMazeMap) -> bool {
 
 // test module
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use utils::file_utils::read_file;
+
+    use crate::challenge_resolve::MonstrousMazeResolver;
+    use crate::models::MonstrousMazeInput;
+
+    #[test]
+    fn test_mazes_resolution() {
+        let mazes: Vec<String> = read_file("data/mazes.txt")
+            .split('\n')
+            .map(|maze| maze.replace("\\n", "\n"))
+            .collect();
+
+        let answers: Vec<String> = read_file("data/mazes_answers.txt")
+            .split('\n')
+            .map(|answer| answer.to_string())
+            .collect();
+
+        mazes.iter().enumerate().for_each(|(index, maze)| {
+            let answer =
+                MonstrousMazeResolver::resolve_monstrous_maze_challenge(&MonstrousMazeInput {
+                    endurance: 2,
+                    grid: maze.to_string(),
+                });
+            assert_eq!(answer.path, answers[index]);
+        })
+    }
+}
