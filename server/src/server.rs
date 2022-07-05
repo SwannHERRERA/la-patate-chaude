@@ -1,7 +1,7 @@
 use crate::exchanger::Exchanger;
-use crate::message_handler::MessageHandler;
-use crate::player::PlayerList;
+use crate::game::Game;
 use std::io::Write;
+use crate::message_handler::MessageHandler;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
@@ -11,30 +11,30 @@ use shared::message::Message;
 
 pub struct Server {
   listener: TcpListener,
-  players: PlayerList,
+  game: Game,
 }
 
 impl Server {
-  pub fn new(listener: TcpListener, players: PlayerList) -> Server {
-    Server { listener, players }
+  pub fn new(listener: TcpListener, game: Game) -> Server {
+    Server { listener, game }
   }
 
   pub fn listen(&mut self) {
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
     let (tx, rx) = mpsc::channel::<Message>();
-
     handles.push(self.listen_broadcast(rx));
 
     for stream in self.listener.incoming() {
       let stream = stream.unwrap();
       debug!("{:?}", stream);
       let stream_copy = stream.try_clone().unwrap();
-      info!("players {:?}", self.players.get_players());
-      let message_handler = MessageHandler::new(self.players.clone());
+      info!("players {:?}", self.game.players.get_players());
+      let message_handler = MessageHandler::new_from_game(&self.game);
       let tx = tx.clone();
+      let game = self.game.clone();
       let handle = thread::spawn(move || {
-        let mut exchanger = Exchanger::new(message_handler, tx);
-        exchanger.hold_communcation(stream_copy);
+        let mut exchanger = Exchanger::new(message_handler, tx, game);
+        exchanger.hold_communication(stream_copy);
       });
       handles.push(handle);
     }
@@ -44,15 +44,14 @@ impl Server {
   }
 
   fn listen_broadcast(&self, rx: mpsc::Receiver<Message>) -> JoinHandle<()> {
-    let players = self.players.players.clone();
-    info!("players {:?}", self.players.get_players());
+    let players = self.game.players.players.clone();
+    info!("players {:?}", self.game.players.get_players());
     let broadcast_reciever = thread::spawn(move || loop {
       match rx.recv() {
         Ok(msg) => {
           let mut players = players.lock().unwrap();
           info!("rx recieve : {:?}", msg);
           for player in players.iter_mut() {
-
             let response = serde_json::to_string(&msg).unwrap();
             let response = response.as_bytes();
             let response_size = response.len() as u32;
