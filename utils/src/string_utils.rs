@@ -7,7 +7,7 @@ pub fn get_string_after_last_occurrence(string: &String, character: &char) -> St
     let index = rfind_utf8(string, *character);
 
     if index.is_some() {
-        new_string.push_str(&string[(index.unwrap() + 1)..]);
+        new_string.push_str(&string[(index.expect("Index should be some") + 1)..]);
     }
     // println!(
     //     "String after last occ '{}': '{}' -> '{}'",
@@ -22,7 +22,7 @@ pub fn get_string_before_last_occurrence(string: &String, character: &char) -> S
     let index = rfind_utf8(string, *character);
 
     if index.is_some() {
-        new_string.push_str(&string[..index.unwrap()]);
+        new_string.push_str(&string[..index.expect("Index should be some")]);
     }
     // println!(
     //     "String before last occ '{}': '{}' -> '{}'",
@@ -36,7 +36,7 @@ pub fn get_string_before_first_occurrence(string: &String, character: &char) -> 
     let index = find_utf8(string, *character);
 
     if index.is_some() {
-        new_string.push_str(&string[..index.unwrap()]);
+        new_string.push_str(&string[..index.expect("Index should be some")]);
     }
 
     // println!(
@@ -51,7 +51,7 @@ pub fn get_string_after_first_occurrence(string: &String, character: &char) -> S
     let index = find_utf8(string, *character);
 
     if index.is_some() {
-        new_string.push_str(&string[(index.unwrap() + 1)..]);
+        new_string.push_str(&string[(index.expect("Index should be some") + 1)..]);
     }
 
     // println!(
@@ -70,7 +70,7 @@ pub fn get_string_after_n_occurrence(
     let index = find_n_utf8(string, *character, occurrence);
 
     if index.is_some() {
-        new_string.push_str(&string[(index.unwrap() + 1)..]);
+        new_string.push_str(&string[(index.expect("Index should be some") + 1)..]);
     }
 
     // println!(
@@ -85,7 +85,7 @@ pub fn get_string_before_sequence(string: &String, sequence: &String) -> String 
     let index = rfind_sequence_utf8(string, sequence);
 
     if index.is_some() {
-        new_string.push_str(&string[..index.unwrap()]);
+        new_string.push_str(&string[..index.expect("Index should be some")]);
     }
 
     // println!(
@@ -100,7 +100,7 @@ pub fn get_string_after_sequence(string: &String, sequence: &String) -> String {
     let index = find_sequence_utf8(string, sequence);
 
     if index.is_some() {
-        new_string.push_str(&string[(index.unwrap() + sequence.len())..]);
+        new_string.push_str(&string[(index.expect("Index should be some") + sequence.len())..]);
     }
 
     // println!(
@@ -155,7 +155,7 @@ pub fn get_string_before_n_occurrence(
     let index = find_n_utf8(string, *character, occurrence);
 
     if index.is_some() {
-        new_string.push_str(&string[..index.unwrap()]);
+        new_string.push_str(&string[..index.expect("Index should be some")]);
     }
 
     // println!(
@@ -208,9 +208,14 @@ pub fn generate_dictionary_hashmap(dictionary: &String) -> HashSet<String> {
 }
 
 pub fn is_word_in_dictionary(word: &String, dictionary: &HashMap<char, HashSet<String>>) -> bool {
-    let first_char = word.chars().next().unwrap();
+    let first_char = word
+        .chars()
+        .next()
+        .expect("Word should have at least one character");
     if dictionary.contains_key(&first_char) {
-        let word_vec = dictionary.get(&first_char).unwrap();
+        let word_vec = dictionary
+            .get(&first_char)
+            .expect("Dictionary should have this char key");
         return word_vec.contains(word);
     }
     false
@@ -253,7 +258,13 @@ pub fn add_spaces_in_sequence(sequence: &str, nb_spaces: &usize) -> String {
     let mut nb_spaces_left = *nb_spaces;
     for (index, current_char) in sequence[..sequence.len() - 1].chars().enumerate() {
         new_sequence.push(current_char);
-        if current_char == ' ' || sequence.chars().nth(index + 1).unwrap() == ' ' {
+        if current_char == ' '
+            || sequence
+                .chars()
+                .nth(index + 1)
+                .expect("Sequence should have next character")
+                == ' '
+        {
             continue;
         }
 
@@ -262,7 +273,12 @@ pub fn add_spaces_in_sequence(sequence: &str, nb_spaces: &usize) -> String {
             nb_spaces_left -= 1;
         }
     }
-    new_sequence.push(sequence.chars().last().unwrap());
+    new_sequence.push(
+        sequence
+            .chars()
+            .last()
+            .expect("Sequence should have last character"),
+    );
     new_sequence
 }
 

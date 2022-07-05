@@ -12,7 +12,7 @@ pub fn solve_secret_sentence_challenge(
     input: &RecoverSecretInput,
     dictionary: &HashSet<String>,
 ) -> RecoverSecretOutput {
-    println!("Solving challenge...\n{:?}", input);
+    // println!("Solving challenge...\n{:?}", input);
     let mut tuples = retrieve_tuples_from_letters(&input);
     let secret_sentence =
         retrieve_secret_sentence_from_tuples(&mut tuples, &input.word_count, dictionary, &true);
@@ -51,7 +51,13 @@ pub fn retrieve_tuples_from_letters(input: &RecoverSecretInput) -> Vec<Vec<char>
     input.tuple_sizes.iter().for_each(|size| {
         let mut tuple: Vec<char> = Vec::new();
         for i in current_index..(current_index + *size) {
-            tuple.push(input.letters.chars().nth(i).unwrap());
+            tuple.push(
+                input
+                    .letters
+                    .chars()
+                    .nth(i)
+                    .expect("Unable to get char for tuple"),
+            );
         }
         tuples.push(tuple);
         current_index += *size;
@@ -90,7 +96,7 @@ fn find_sequence(propositions: &Vec<String>, nb_words: &usize) -> String {
     return add_spaces_in_sequence(&sequence, &(*nb_words - current_word_count));
 }
 
-fn display_possibilities(propositions: &Vec<String>) {
+/*fn display_possibilities(propositions: &Vec<String>) {
     if propositions.len() > 0 {
         println!("===================================================");
         for i in 0..propositions.len() {
@@ -101,7 +107,7 @@ fn display_possibilities(propositions: &Vec<String>) {
     } else {
         println!("No solution found.");
     }
-}
+}*/
 
 fn retrieve_possible_strings_from_tuples(
     tuples: &mut Vec<Vec<char>>,
@@ -211,7 +217,9 @@ fn process_middle_element_of_tuple(
     mut new_propositions: &mut Vec<String>,
     compute_all_possibilities: &bool,
 ) {
-    let next_char = tuple.get(index + 1).unwrap();
+    let next_char = tuple
+        .get(index + 1)
+        .expect("Unable to get next char in tuple middle char");
     let previous_sequence: Vec<char> = tuple.iter().take(index).map(|c| *c).collect();
 
     propositions.iter().for_each(|proposition| {
@@ -235,7 +243,11 @@ fn process_middle_element_of_tuple(
                     for i in 0..new_proposition.len() + 1 {
                         if i == 0
                             && new_proposition.len() > 0
-                            && new_proposition.chars().nth(0).unwrap().is_uppercase()
+                            && new_proposition
+                                .chars()
+                                .nth(0)
+                                .expect("Unable to get first character of string")
+                                .is_uppercase()
                         {
                             continue;
                         }
@@ -251,6 +263,7 @@ fn process_middle_element_of_tuple(
                             &nb_words,
                         );
                     }
+                    // new_propositions.push(proposition.clone()); resolve issue but too much complexity....
                 } else {
                     new_propositions.push(proposition.clone());
                 }
@@ -293,7 +306,11 @@ fn process_last_element_of_tuple(
                 for i in 0..new_proposition.len() + 1 {
                     if i == 0
                         && new_proposition.len() > 0
-                        && new_proposition.chars().nth(0).unwrap().is_uppercase()
+                        && new_proposition
+                            .chars()
+                            .nth(0)
+                            .expect("Unable to get first character of string")
+                            .is_uppercase()
                     {
                         continue;
                     }
@@ -371,7 +388,11 @@ fn process_first_element_of_tuple_one_element(
                     for i in 0..new_proposition.len() + 1 {
                         if i == 0
                             && new_proposition.len() > 0
-                            && new_proposition.chars().nth(0).unwrap().is_uppercase()
+                            && new_proposition
+                                .chars()
+                                .nth(0)
+                                .expect("Unable to get first character of string")
+                                .is_uppercase()
                         {
                             continue;
                         }
@@ -397,7 +418,7 @@ fn process_first_element_of_tuple_more_than_one_element(
     mut new_propositions: &mut Vec<String>,
     compute_all_possibilities: &bool,
 ) {
-    let next_char = tuple.get(index + 1).unwrap();
+    let next_char = tuple.get(index + 1).expect("Unable to get next character");
 
     propositions.iter().for_each(|proposition| {
         let mut new_proposition: String;
@@ -420,7 +441,11 @@ fn process_first_element_of_tuple_more_than_one_element(
                     for i in 0..new_proposition.len() + 1 {
                         if i == 0
                             && new_proposition.len() > 0
-                            && new_proposition.chars().nth(0).unwrap().is_uppercase()
+                            && new_proposition
+                                .chars()
+                                .nth(0)
+                                .expect("Unable to get first character of string")
+                                .is_uppercase()
                         {
                             continue;
                         }
@@ -565,7 +590,7 @@ mod tests {
 
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 2,
-            letters: "C'echCt chut cou't htu'ehuest o".parse().unwrap(),
+            letters: "C'echCt chut cou't htu'ehuest o".to_string(),
             tuple_sizes: vec![5, 6, 5, 4, 2, 4, 5],
         };
 
@@ -574,7 +599,7 @@ mod tests {
 
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 3,
-            letters: "Ififrdlfatoil ft f".parse().unwrap(),
+            letters: "Ififrdlfatoil ft f".to_string(),
             tuple_sizes: vec![6, 6, 6],
         };
 
@@ -583,9 +608,7 @@ mod tests {
 
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 3,
-            letters: " it fridft Ilfrlafdl tfidatrodliidIl fridIlft od"
-                .parse()
-                .unwrap(),
+            letters: " it fridft Ilfrlafdl tfidatrodliidIl fridIlft od".to_string(),
             tuple_sizes: vec![8, 3, 4, 4, 6, 5, 4, 7, 7],
         };
 
@@ -594,9 +617,7 @@ mod tests {
 
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 3,
-            letters: "I fitfrli fiti ffrdIa fril t ofat ofa fIl fo"
-                .parse()
-                .unwrap(),
+            letters: "I fitfrli fiti ffrdIa fril t ofat ofa fIl fo".to_string(),
             tuple_sizes: vec![7, 4, 3, 5, 6, 5, 5, 4, 5],
         };
 
@@ -608,7 +629,7 @@ mod tests {
     fn test_solve_secret_string_challenge() {
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 1,
-            letters: "iffiiilfatroridato".parse().unwrap(),
+            letters: "iffiiilfatroridato".to_string(),
             tuple_sizes: vec![3, 3, 3, 3, 3, 3],
         };
 
@@ -620,7 +641,7 @@ mod tests {
     fn another_test_solve_secret_string_challenge() {
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 1,
-            letters: "rTlThoTzo".parse().unwrap(),
+            letters: "rTlThoTzo".to_string(),
             tuple_sizes: vec![3, 3, 3],
         };
 
@@ -632,7 +653,7 @@ mod tests {
     fn test_solve_secret_string_challenge_multiple_words() {
         let recover_secret_input: RecoverSecretInput = RecoverSecretInput {
             word_count: 6,
-            letters: "iffiiilfatroridato".parse().unwrap(),
+            letters: "iffiiilfatroridato".to_string(),
             tuple_sizes: vec![3, 3, 3, 3, 3, 3],
         };
 
