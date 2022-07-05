@@ -20,7 +20,7 @@ pub struct MonstrousMazeMap {
     pub target_position: Position,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Position {
     pub x: usize,
     pub y: usize,
