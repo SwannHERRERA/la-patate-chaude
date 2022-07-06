@@ -63,17 +63,11 @@ impl TargetStrategy for RandomTargetStrategy {
         RandomTargetStrategy {current_name}
     }
 
-    fn next_target(self, mut public_leader_board: PublicLeaderBoard) -> String {
-        let index = public_leader_board.iter().position(|r| r.name.clone() == self.current_name);
-        if let None = index {
-            panic!("No such player in the game");
-        }
-        let index = index.unwrap();
-        public_leader_board.remove(index);
+    fn next_target(self, public_leader_board: PublicLeaderBoard) -> String {
+        let public_leader_board = public_leader_board.iter()
+        .filter(|player| player.name != self.current_name && player.is_active)
+        .collect::<Vec<_>>();
         let mut rng = thread_rng();
-        if public_leader_board.len() == 0 {
-            panic!("No more players in the game");
-        }
         let target_index = rng.gen_range(0..public_leader_board.len());
         public_leader_board.get(target_index as usize).unwrap().name.to_string()
     }
