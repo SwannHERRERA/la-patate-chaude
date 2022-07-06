@@ -1,6 +1,8 @@
+use std::fmt::Debug;
+
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct PublicPlayer {
   pub name: String,
   pub stream_id: String,
@@ -25,6 +27,15 @@ impl PublicPlayer {
     self.is_active = true;
     self.name = name.to_string();
   }
+}
+
+impl Debug for PublicPlayer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      if self.is_active == false {
+        write!(f, "Player Inactive: {}\n", self.stream_id)?
+      }
+      write!(f, "{}: {}\t step: {}, total time: {} | {}\n", self.name, self.score, self.steps, self.total_used_time, self.stream_id)
+    }
 }
 
 #[cfg(test)]
