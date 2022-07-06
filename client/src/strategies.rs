@@ -64,7 +64,11 @@ impl TargetStrategy for RandomTargetStrategy {
     }
 
     fn next_target(self, mut public_leader_board: PublicLeaderBoard) -> String {
-        let index = public_leader_board.iter().position(|r| r.name.clone() == self.current_name).unwrap();
+        let index = public_leader_board.iter().position(|r| r.name.clone() == self.current_name);
+        if let None = index {
+            panic!("No such player in the game");
+        }
+        let index = index.unwrap();
         public_leader_board.remove(index);
         let mut rng = thread_rng();
         if public_leader_board.len() == 0 {
