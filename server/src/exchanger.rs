@@ -50,7 +50,9 @@ impl Exchanger {
             ChallengeValue::Unreachable | ChallengeValue::Timeout => todo!(),// desactivé mon client
             ChallengeValue::BadResult { used_time: _, next_target } | ChallengeValue::Ok { used_time: _, next_target } => {
               let message = Message::Challenge(challenge);
-              self.tx.send(MessageType::unicast(message, next_target.to_string())).unwrap();
+              if let Some(player) = self.game.get_player_by_name(next_target) {
+                self.tx.send(MessageType::unicast(message, player.name)).unwrap();
+              }
             },
           }
         }

@@ -61,6 +61,10 @@ impl PlayerList {
       }
     }
 
+    pub fn get_player_by_name(&self, name: &str) -> Option<PublicPlayer> {
+      self.players.lock().unwrap().iter().find(|p| p.info_public.name == name).map(|p| p.info_public.clone())
+    }
+
     pub fn get_and_remove_player_by_stream_id(&self, stream_id: String) -> Option<Player> {
       let index = self.players.lock().unwrap().iter().position(|p| p.info_public.stream_id == stream_id);
       if let Some(index) = index {

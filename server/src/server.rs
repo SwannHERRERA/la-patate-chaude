@@ -65,13 +65,15 @@ impl Server {
             }
             ResponseType::Unicast { client_id } => {
               trace!("unicast to {:?}", &client_id);
-              let player = players.get_and_remove_player_by_stream_id(client_id);
+              let player = players.get_and_remove_player_by_stream_id(client_id.clone());
+              debug!("players {:?}", players);
               match player {
                 Some(player) => {
                   send_response(msg.message, &player.tcp_stream);
                   players.add_player(player);
+                  debug!("players {:?}", players);
                 }
-                None => warn!("player not found"),
+                None => warn!("player {} not found", client_id),
               }
             }
           };

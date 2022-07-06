@@ -62,6 +62,10 @@ impl Game {
   pub fn get_last_chain_result(&self) -> Option<ReportedChallengeResult> {
     self.chain.lock().unwrap().last().cloned()
   }
+
+  pub fn get_player_by_name(&self, name: &str) -> Option<PublicPlayer> {
+    self.players.get_player_by_name(name)
+  }
 }
 // match challenge_type.as_str() {
 //    hashcash => {
