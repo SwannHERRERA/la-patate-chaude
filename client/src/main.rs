@@ -1,10 +1,9 @@
 use std::{io::{Read, Write}, net::TcpStream, thread};
-use std::net::{Shutdown, SocketAddr};
+use std::net::Shutdown;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
-use std::thread::JoinHandle;
 
 use clap::Parser;
 use log::{debug, error, trace, warn};
@@ -13,7 +12,7 @@ use rand::Rng;
 
 use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType};
-use shared::config::{LOG_LEVEL};
+use shared::config::LOG_LEVEL;
 use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
 use shared::subscribe::SubscribeResult;
@@ -100,7 +99,7 @@ impl Client {
         self.start_message_listener(stream_cpy, thread_writer.clone());
     }
 
-    fn start_message_listener(mut self, mut stream: TcpStream, thread_writer: Sender<Message>) -> JoinHandle<()> {
+    fn start_message_listener(mut self, mut stream: TcpStream, thread_writer: Sender<Message>) {
         loop {
             let mut buf_size = [0; 4];
             stream.read(&mut buf_size).unwrap();
@@ -114,15 +113,25 @@ impl Client {
             let string_receive = String::from_utf8_lossy(&buf);
 
             match serde_json::from_str(&string_receive) {
-                Ok(message) => self.dispatch_messages(message, &thread_writer),
+                Ok(message) => {
+                    let message = self.dispatch_messages(message, &thread_writer);
+                    match message {
+                        Message::EndOfGame { .. } => {
+                            debug!("Shutting down reader stream");
+                            stream.shutdown(Shutdown::Both).expect("shutdown call failed");
+                            break;
+                        }
+                        _ => {}
+                    }
+                },
                 Err(err) => error!("Error while parsing message {:?}", err),
             }
         }
     }
 
-    fn dispatch_messages(&mut self, message: Message, thread_writer: &Sender<Message>) {
+    fn dispatch_messages(&mut self, message: Message, thread_writer: &Sender<Message>) -> Message {
         debug!("Dispatching: {:?}", message);
-        match message {
+        match message.clone() {
             Message::Welcome { .. } => {
                 let answer = Message::Subscribe { name: self.username.clone() };
                 thread_writer.send(answer).unwrap();
@@ -155,6 +164,7 @@ impl Client {
             }
             _ => warn!("Unhandled message {:?}", message)
         }
+        message
     }
 
     fn start_message_sender(&self, mut stream: TcpStream, thread_reader: Receiver<Message>) {
@@ -162,8 +172,8 @@ impl Client {
             for message in thread_reader {
                 match message {
                     Message::EndOfGame { .. } => {
-                        debug!("Shutting down stream");
-                        stream.shutdown(Shutdown::Both).expect("shutdown call failed");
+                        debug!("Shutting down writer stream");
+                        break;
                     }
                     _ => {
                         if let Ok(message) = serde_json::to_string(&message) {
