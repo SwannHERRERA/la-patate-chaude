@@ -6,7 +6,7 @@ use crate::utils::send_response;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
-use log::{info, debug, warn};
+use log::{info, debug, warn, trace};
 use shared::config::{PORT, IP};
 use shared::message::{MessageType, ResponseType};
 use shared::public_player::PublicPlayer;
@@ -54,7 +54,7 @@ impl Server {
     thread::spawn(move || loop {
       match rx.recv() {
         Ok(msg) => {
-          info!("rx recieve : {:?}", &msg);
+          info!("Sending : {:?}", &msg);
           match msg.message_type {
             ResponseType::Broadcast => {
               let mut players = players.players.lock().unwrap();
@@ -64,6 +64,7 @@ impl Server {
               }
             }
             ResponseType::Unicast { client_id } => {
+              trace!("unicast to {:?}", &client_id);
               let player = players.get_and_remove_player_by_stream_id(client_id);
               match player {
                 Some(player) => {

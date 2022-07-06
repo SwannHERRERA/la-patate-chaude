@@ -1,5 +1,5 @@
 extern crate rand;
-use rand::{Rng, prelude::IteratorRandom};
+use rand::prelude::IteratorRandom;
 use std::{net::TcpStream, sync::{Mutex, Arc}};
 use shared::public_player::PublicPlayer;
 #[derive(Debug)]

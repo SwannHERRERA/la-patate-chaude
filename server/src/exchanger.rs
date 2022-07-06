@@ -73,7 +73,7 @@ impl Exchanger {
       panic!("No player found");
     }
     let player = player.unwrap();
-    MessageType::unicast(message, player.name)
+    MessageType::unicast(message, player.stream_id)
   }
 }
 
