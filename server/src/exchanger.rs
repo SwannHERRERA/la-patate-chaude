@@ -44,7 +44,7 @@ impl Exchanger {
         let challenge = self.get_new_challenge();
         debug!("chain: {:?}", self.game.chain);
         // send challenge to the good person
-        if let Some(challenge_result) = self.game.chain.last() {
+        if let Some(challenge_result) = self.game.get_last_chain_result() {
           debug!("{:?}", challenge_result);
           match &challenge_result.value {
             ChallengeValue::Unreachable | ChallengeValue::Timeout => todo!(),// desactivé mon client

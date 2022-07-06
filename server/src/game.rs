@@ -10,14 +10,14 @@ pub struct Game {
   pub players: PlayerList,
   pub challenge: Arc<Mutex<Option<ChallengeType>>>,
   pub challenge_type: String,
-  pub chain: Vec<ReportedChallengeResult>,
+  pub chain: Arc<Mutex<Vec<ReportedChallengeResult>>>,
 }
 
 impl Game {
   pub fn new(challenge_type: String) -> Game {
     let players = PlayerList::new();
     let challenge = Arc::new(Mutex::new(None));
-    let chain = Vec::new();
+    let chain = Arc::new(Mutex::new(Vec::new()));
     Game {
       players,
       challenge,
@@ -52,11 +52,15 @@ impl Game {
   }
 
   pub fn get_chain(&self) -> Vec<ReportedChallengeResult> {
-    self.chain.clone()
+    self.chain.lock().unwrap().clone()
   }
 
   pub fn push_reported_challenge_result(&mut self, result: ReportedChallengeResult) {
-    self.chain.push(result);
+    self.chain.lock().unwrap().push(result);
+  }
+
+  pub fn get_last_chain_result(&self) -> Option<ReportedChallengeResult> {
+    self.chain.lock().unwrap().last().cloned()
   }
 }
 // match challenge_type.as_str() {
