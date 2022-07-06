@@ -1,6 +1,6 @@
 use hashcash::hashcash::Hashcash;
 use log::{info, debug, trace, error};
-use shared::challenge::{ChallengeType, ChallengeAnswer};
+use shared::challenge::{ChallengeType, ChallengeAnswer, get_name_of_challenge_type, ReportedChallengeResult, ChallengeValue};
 use shared::message::{Message, MessageType};
 use shared::subscribe::{SubscribeResult, SubscribeError};
 
@@ -21,7 +21,7 @@ impl MessageHandler {
         Message::Hello => self.handle_hello(client_id),
         Message::Subscribe { name } => self.handle_subscribtion(name, client_id),
         Message::StartGame {  } => self.handle_start_game(),
-        Message::ChallengeResult { answer, next_target } => self.handle_challenge_result(current_challenge, answer, next_target),
+        Message::ChallengeResult { answer, next_target } => self.handle_challenge_result(current_challenge, answer, next_target, client_id),
         Message::EndOfCommunication =>self.handle_end_of_communication(client_id),
         _ => panic!("Not implemented")
       }
@@ -61,19 +61,28 @@ impl MessageHandler {
     answer
   }
 
-  fn handle_challenge_result(&self, challenge: Option<ChallengeType>, answer: ChallengeAnswer, next_target: String) -> MessageType {
+  fn handle_challenge_result(&mut self, challenge: Option<ChallengeType>, answer: ChallengeAnswer, next_target: String, client_id: String) -> MessageType {
     match challenge {
       Some(challenge) => {
         let answer = match answer {
             ChallengeAnswer::MD5HashCash(output) => output,
         };
-        let has_pass_challenge = match challenge {
+        let has_pass_challenge = match &challenge {
           ChallengeType::MD5HashCash(challenge) => Hashcash::verify(answer.hashcode, challenge.0.complexity),
         };
         if has_pass_challenge {
-          todo!();
+          self.game.add_point(client_id.as_str());
         }
-        todo!();
+        let challenge_result = ReportedChallengeResult {
+          name: get_name_of_challenge_type(challenge.clone()),
+          value: ChallengeValue::Ok { used_time: 0.0, next_target },
+        };
+        self.game.push_reported_challenge_result(challenge_result);
+        debug!("get chain: {:?}", self.game.get_chain());
+        MessageType::boardcast(Message::RoundSummary {
+          challenge: get_name_of_challenge_type(challenge),
+          chain: self.game.get_chain(),
+        })
       }
       None => {
         error!("No challenge to answer");

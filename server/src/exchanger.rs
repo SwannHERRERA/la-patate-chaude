@@ -1,7 +1,7 @@
 use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::Read};
 
 use hashcash::dto::{MD5HashCashInput, MD5HashCash};
-use log::{trace, warn, info};
+use log::{trace, warn, info, error};
 use shared::{message::{Message, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
 
 use crate::{game::Game, message_handler::MessageHandler};
@@ -59,11 +59,20 @@ impl Exchanger {
   }
 
   fn start_round(&self) -> MessageType {
-    let challenge = ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()));
+    let challenge = match self.game.challenge_type.as_str() {
+      "hashcash" => ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new())),
+      _ => panic!("Unknown challenge type"),
+    };
     self.game.set_challenge(challenge.clone());
 
     let message = Message::Challenge(challenge);
-    MessageType::boardcast(message)
+    let player = self.game.players.pick_random_player();
+    if player.is_none() {
+      error!("No player found");
+      panic!("No player found");
+    }
+    let player = player.unwrap();
+    MessageType::unicast(message, player.name)
   }
 }
 
