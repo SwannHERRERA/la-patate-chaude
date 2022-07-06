@@ -51,7 +51,7 @@ impl Exchanger {
             ChallengeValue::BadResult { used_time: _, next_target } | ChallengeValue::Ok { used_time: _, next_target } => {
               let message = Message::Challenge(challenge);
               if let Some(player) = self.game.get_player_by_name(next_target) {
-                self.tx.send(MessageType::unicast(message, player.name)).unwrap();
+                self.tx.send(MessageType::unicast(message, player.stream_id)).unwrap();
               }
             },
           }
