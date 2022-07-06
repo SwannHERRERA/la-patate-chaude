@@ -1,8 +1,8 @@
 use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::Read};
 
 use hashcash::dto::{MD5HashCashInput, MD5HashCash};
-use log::{trace, warn, info, error};
-use shared::{message::{Message, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
+use log::{trace, warn, info, error, debug};
+use shared::{message::{Message, MessageType, PublicLeaderBoard}, challenge::{ChallengeType, ChallengeValue}};
 
 use crate::{game::Game, message_handler::MessageHandler};
 
@@ -24,19 +24,45 @@ impl Exchanger {
     loop {
       let parsed_message = self.parse_message_from_tcp_stream(&stream);
       let response = self.message_handler.handle_message(parsed_message, client_id.clone(), self.game.get_challenge());
+
       if matches!(response.message, Message::EndOfCommunication) {
         break;
       }
-      let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
-      self.tx.send(response).unwrap();
-      if is_start_round {
-        let challenge_message = self.start_round();
-        self.tx.send(challenge_message).unwrap();
-      }
+      self.check_start_round(response.clone());
+      self.check_end_challenge(response);
     }
+
     let shutdown_result = stream.shutdown(Shutdown::Both);
     if shutdown_result.is_err() {
       trace!("Shutdown failed: {:?}", shutdown_result);
+    }
+  }
+
+  fn check_end_challenge(&mut self, response: MessageType) {
+    if matches!(response.message, Message::RoundSummary { .. }) {
+      trace!("End of challenge");
+        let challenge = self.get_new_challenge();
+        debug!("chain: {:?}", self.game.chain);
+        // send challenge to the good person
+        if let Some(challenge_result) = self.game.chain.last() {
+          debug!("{:?}", challenge_result);
+          match &challenge_result.value {
+            ChallengeValue::Unreachable | ChallengeValue::Timeout => todo!(),// desactivé mon client
+            ChallengeValue::BadResult { used_time: _, next_target } | ChallengeValue::Ok { used_time: _, next_target } => {
+              let message = Message::Challenge(challenge);
+              self.tx.send(MessageType::unicast(message, next_target.to_string())).unwrap();
+            },
+          }
+        }
+      }
+  }
+
+  fn check_start_round(&mut self, response: MessageType) {
+    let is_start_round = matches!(response.message, Message::PublicLeaderBoard(PublicLeaderBoard { .. }));
+    self.tx.send(response).unwrap();
+    if is_start_round {
+      let challenge_message = self.start_round();
+      self.tx.send(challenge_message).unwrap();
     }
   }
 
@@ -60,10 +86,7 @@ impl Exchanger {
 
   fn start_round(&self) -> MessageType {
     info!("start round");
-    let challenge = match self.game.challenge_type.as_str() {
-      "hashcash" => ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new())),
-      _ => panic!("Unknown challenge type"),
-    };
+    let challenge = self.get_new_challenge();
     self.game.set_challenge(challenge.clone());
 
     let message = Message::Challenge(challenge);
@@ -74,6 +97,13 @@ impl Exchanger {
     }
     let player = player.unwrap();
     MessageType::unicast(message, player.stream_id)
+  }
+
+  fn get_new_challenge(&self) -> ChallengeType {
+    match self.game.challenge_type.as_str() {
+      "hashcash" => ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new())),
+      _ => panic!("Unknown challenge type"),
+    }
   }
 }
 
