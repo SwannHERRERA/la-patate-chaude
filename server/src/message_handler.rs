@@ -34,7 +34,7 @@ impl MessageHandler {
       Message::SubscribeResult(SubscribeResult::Ok)
     };
     let answer = MessageType::unicast(answer, client_id.clone());
-    self.game.players.activate_player(client_id.as_str());
+    self.game.players.activate_player(client_id.as_str(), name.as_str());
     trace!("Answer: {:?}", answer);
     trace!("game: {:?}", self.game);
     answer

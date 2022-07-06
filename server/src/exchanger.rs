@@ -59,6 +59,7 @@ impl Exchanger {
   }
 
   fn start_round(&self) -> MessageType {
+    info!("start round");
     let challenge = match self.game.challenge_type.as_str() {
       "hashcash" => ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new())),
       _ => panic!("Unknown challenge type"),
@@ -66,7 +67,7 @@ impl Exchanger {
     self.game.set_challenge(challenge.clone());
 
     let message = Message::Challenge(challenge);
-    let player = self.game.players.pick_random_player();
+    let player = self.game.players.pick_random_active_player();
     if player.is_none() {
       error!("No player found");
       panic!("No player found");

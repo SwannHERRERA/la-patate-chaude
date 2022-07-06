@@ -1,5 +1,5 @@
 extern crate rand;
-use rand::Rng;
+use rand::{Rng, prelude::IteratorRandom};
 use std::{net::TcpStream, sync::{Mutex, Arc}};
 use shared::public_player::PublicPlayer;
 #[derive(Debug)]
@@ -45,10 +45,11 @@ impl PlayerList {
       self.players.lock().unwrap().iter().any(|p| p.info_public.name == name)
     }
 
-    pub fn pick_random_player(&self) -> Option<PublicPlayer> {
-      let mut rng = rand::thread_rng();
-      let index = rng.gen_range(0..self.players.lock().unwrap().len());
-      self.players.lock().unwrap().get(index).map(|p| p.info_public.clone())
+    pub fn pick_random_active_player(&self) -> Option<PublicPlayer> {
+      let players = self.players.lock().unwrap();
+      players.iter().filter(|p| p.info_public.is_active)
+        .choose(&mut rand::thread_rng())
+        .map(|p| p.info_public.clone())
     }
 
     pub fn get_and_remove_player_by_name(&self, name: &str) -> Option<Player> {
@@ -75,10 +76,10 @@ impl PlayerList {
         self.players.lock().unwrap()[index].info_public.is_active = false;
       }
     }
-    pub fn activate_player(&mut self, client_id: &str) {
+    pub fn activate_player(&mut self, client_id: &str, name: &str) {
       let index = self.players.lock().unwrap().iter().position(|p| p.info_public.stream_id == client_id);
       if let Some(index) = index {
-        self.players.lock().unwrap()[index].info_public.make_active();
+        self.players.lock().unwrap()[index].info_public.make_active(name);
       }
     }
 }

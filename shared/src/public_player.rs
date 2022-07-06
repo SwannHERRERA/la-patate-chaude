@@ -21,8 +21,9 @@ impl PublicPlayer {
       total_used_time: 0.0,
     }
   }
-  pub fn make_active(&mut self) {
+  pub fn make_active(&mut self, name: &str) {
     self.is_active = true;
+    self.name = name.to_string();
   }
 }
 
@@ -41,7 +42,7 @@ mod tests {
   #[test]
   fn test_set_active() {
     let mut player = PublicPlayer::new("Test".to_string(), "127.0.0.1:1234".to_string());
-    player.make_active();
+    player.make_active("Test");
     assert_eq!(player.is_active, true);
   }
 }
