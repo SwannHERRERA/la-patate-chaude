@@ -32,6 +32,9 @@ impl Game {
   pub fn get_challenge(&self) -> Option<ChallengeType> {
     self.challenge.lock().unwrap().clone()
   }
+  pub fn set_challenge(&self, challenge: ChallengeType) {
+    self.challenge.lock().unwrap().replace(challenge);
+  }
 }
 // match challenge_type.as_str() {
 //    hashcash => {

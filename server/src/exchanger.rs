@@ -4,17 +4,18 @@ use hashcash::dto::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info};
 use shared::{message::{Message, MessageType, PublicLeaderBoard}, challenge::ChallengeType};
 
-use crate::message_handler::MessageHandler;
+use crate::{game::Game, message_handler::MessageHandler};
 
 pub struct Exchanger {
   message_handler: MessageHandler,
+  game: Game,
   tx: Sender<MessageType>,
 }
 
 impl Exchanger {
 
-  pub fn new(message_handler: MessageHandler, tx: Sender<MessageType>) -> Exchanger {
-    Exchanger { message_handler, tx }
+  pub fn new(message_handler: MessageHandler, game: Game, tx: Sender<MessageType>) -> Exchanger {
+    Exchanger { message_handler, game, tx }
   }
 
   pub fn hold_communcation(&mut self, stream: TcpStream) {
@@ -22,7 +23,7 @@ impl Exchanger {
     info!("peer address={:?}", &client_id);
     loop {
       let parsed_message = self.parse_message_from_tcp_stream(&stream);
-      let response = self.message_handler.handle_message(parsed_message, client_id.clone(), self.message_handler.get_challenge());
+      let response = self.message_handler.handle_message(parsed_message, client_id.clone(), self.game.get_challenge());
       if matches!(response.message, Message::EndOfCommunication) {
         break;
       }
@@ -59,6 +60,7 @@ impl Exchanger {
 
   fn start_round(&self) -> MessageType {
     let challenge = ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()));
+    self.game.set_challenge(challenge.clone());
 
     let message = Message::Challenge(challenge);
     MessageType::boardcast(message)

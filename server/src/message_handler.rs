@@ -15,10 +15,6 @@ impl MessageHandler {
     MessageHandler { game }
   }
 
-  pub fn get_challenge(&self) -> Option<ChallengeType> {
-    self.game.get_challenge()
-  }
-
   pub fn handle_message(&mut self, message: Message, client_id: String, current_challenge: Option<ChallengeType>) -> MessageType {
       info!("Incomming Message: {:?}", message);
       match message {
