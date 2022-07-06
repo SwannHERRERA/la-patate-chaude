@@ -6,12 +6,12 @@ mod player;
 mod message_handler;
 mod exchanger;
 mod server;
+mod game;
 
 fn main() {
   std::env::set_var("RUST_LOG", config::LOG_LEVEL);
   pretty_env_logger::init();
   let listener = create_listener();
-  let player_list = player::PlayerList::new();
-  let mut server: Server = Server::new(listener, player_list.clone());
+  let mut server: Server = Server::new(listener, config::CHALLENGE_TYPE);
   server.listen();
 }

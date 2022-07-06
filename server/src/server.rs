@@ -1,25 +1,24 @@
 use crate::exchanger::Exchanger;
+use crate::game::Game;
 use crate::message_handler::MessageHandler;
-use crate::player::{PlayerList, Player};
+use crate::player::Player;
 use crate::utils::send_response;
 use std::net::{SocketAddr, TcpListener};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
 use log::{info, debug, warn};
-use shared::challenge::ChallengeType;
 use shared::config::{PORT, IP};
 use shared::message::{MessageType, ResponseType};
 use shared::public_player::PublicPlayer;
 
 pub struct Server {
   listener: TcpListener,
-  players: PlayerList,
-  pub current_challenge: Arc<Mutex<Option<ChallengeType>>>,
+  pub game: Game,
 }
 
 impl Server {
-  pub fn new(listener: TcpListener, players: PlayerList) -> Server {
-    Server { listener, players, current_challenge: Arc::new(Mutex::new(None)) }
+  pub fn new(listener: TcpListener, challenge_type: &str) -> Server {
+    Server { listener, game: Game::new(challenge_type.to_string()) }
   }
 
   pub fn listen(&mut self) {
@@ -33,9 +32,9 @@ impl Server {
       let stream_id = stream.peer_addr().unwrap().to_string();
       debug!("{:?}", stream);
       let stream_copy = stream.try_clone().unwrap();
-      self.players.add_player(Player::new(PublicPlayer::new(stream_id.clone(), stream_id), stream));
-      info!("players {:?}", self.players.get_players());
-      let message_handler = MessageHandler::new(self.players.clone(), self.current_challenge.clone());
+      self.game.add_player(Player::new(PublicPlayer::new(stream_id.clone(), stream_id), stream));
+      info!("players {:?}", self.game.get_players());
+      let message_handler = MessageHandler::new(self.game.clone());
       let tx = tx.clone();
       let handle = thread::spawn(move || {
         let mut exchanger = Exchanger::new(message_handler, tx);
@@ -49,8 +48,8 @@ impl Server {
   }
 
   fn listen_broadcast(&self, rx: mpsc::Receiver<MessageType>) -> JoinHandle<()> {
-    let mut players = self.players.clone();
-    info!("players {:?}", self.players.get_players());
+    let mut players = self.game.players.clone();
+    info!("players {:?}", self.game.get_players());
     thread::spawn(move || loop {
       match rx.recv() {
         Ok(msg) => {

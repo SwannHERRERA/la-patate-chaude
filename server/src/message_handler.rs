@@ -1,23 +1,22 @@
-use std::sync::{Arc, Mutex};
+use hashcash::hashcash::Hashcash;
 use log::{info, debug, trace, error};
-use shared::challenge::ChallengeType;
+use shared::challenge::{ChallengeType, ChallengeAnswer};
 use shared::message::{Message, MessageType};
 use shared::subscribe::{SubscribeResult, SubscribeError};
 
-use crate::player::PlayerList;
+use crate::game::Game;
 #[derive(Debug)]
 pub struct MessageHandler {
-  players: PlayerList,
-  challenge: Arc<Mutex<Option<ChallengeType>>>
+  game: Game,
 }
 
 impl MessageHandler {
-  pub fn new(players: PlayerList, challenge: Arc<Mutex<Option<ChallengeType>>>) -> MessageHandler {
-    MessageHandler { players, challenge }
+  pub fn new(game: Game) -> MessageHandler {
+    MessageHandler { game }
   }
 
   pub fn get_challenge(&self) -> Option<ChallengeType> {
-    self.challenge.lock().unwrap().clone()
+    self.game.get_challenge()
   }
 
   pub fn handle_message(&mut self, message: Message, client_id: String, current_challenge: Option<ChallengeType>) -> MessageType {
@@ -26,22 +25,22 @@ impl MessageHandler {
         Message::Hello => self.handle_hello(client_id),
         Message::Subscribe { name } => self.handle_subscribtion(name, client_id),
         Message::StartGame {  } => self.handle_start_game(),
-        Message::ChallengeResult { answer: _, next_target: _ } => self.handle_challenge_result(current_challenge),
+        Message::ChallengeResult { answer, next_target } => self.handle_challenge_result(current_challenge, answer, next_target),
         Message::EndOfCommunication =>self.handle_end_of_communication(client_id),
         _ => panic!("Not implemented")
       }
   }
 
   fn handle_subscribtion(&mut self, name: String, client_id: String) -> MessageType {
-    let answer = if self.players.has_player_with_name(&name) {
+    let answer = if self.game.players.has_player_with_name(&name) {
       Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))
     } else {
       Message::SubscribeResult(SubscribeResult::Ok)
     };
     let answer = MessageType::unicast(answer, client_id.clone());
-    self.players.activate_player(client_id.as_str());
+    self.game.players.activate_player(client_id.as_str());
     trace!("Answer: {:?}", answer);
-    trace!("Players: {:?}", self.players);
+    trace!("game: {:?}", self.game);
     answer
   }
 
@@ -52,7 +51,7 @@ impl MessageHandler {
   }
 
   fn handle_start_game(&self) -> MessageType {
-    let start_game_message = Message::PublicLeaderBoard(self.players.get_players());
+    let start_game_message = Message::PublicLeaderBoard(self.game.get_players());
     debug!("Start Game Message: {:?}", start_game_message);
     let answer = MessageType::boardcast(start_game_message);
     trace!("Answer: {:?}", answer);
@@ -66,10 +65,19 @@ impl MessageHandler {
     answer
   }
 
-  fn handle_challenge_result(&self, challenge: Option<ChallengeType>) -> MessageType {
+  fn handle_challenge_result(&self, challenge: Option<ChallengeType>, answer: ChallengeAnswer, next_target: String) -> MessageType {
     match challenge {
       Some(challenge) => {
-       todo!("handle challenge result");
+        let answer = match answer {
+            ChallengeAnswer::MD5HashCash(output) => output,
+        };
+        let has_pass_challenge = match challenge {
+          ChallengeType::MD5HashCash(challenge) => Hashcash::verify(answer.hashcode, challenge.0.complexity),
+        };
+        if has_pass_challenge {
+          todo!();
+        }
+        todo!();
       }
       None => {
         error!("No challenge to answer");
