@@ -7,7 +7,6 @@ use std::net::{SocketAddr, TcpListener};
 use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
 use log::{info, debug, warn, trace};
-use shared::config::{PORT, IP};
 use shared::message::{MessageType, ResponseType};
 use shared::public_player::PublicPlayer;
 

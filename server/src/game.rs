@@ -1,7 +1,7 @@
 use std::{sync::{Mutex, Arc}, time::{Duration, Instant}, collections::HashSet};
 
 use log::{trace, error, debug};
-use shared::{challenge::{ChallengeType, ReportedChallengeResult, GameType}, public_player::PublicPlayer, config};
+use shared::{challenge::{ChallengeType, ReportedChallengeResult, GameType}, public_player::PublicPlayer};
 
 use crate::player::{PlayerList, Player};
 
