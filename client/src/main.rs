@@ -4,14 +4,14 @@ use std::{
     thread,
 };
 use std::collections::HashSet;
-use std::net::{Shutdown, SocketAddr};
+use std::net::Shutdown;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 
 use clap::Parser;
-use log::{debug, error, trace, warn};
+use log::{debug, error, trace};
 use rand;
 use rand::Rng;
 
