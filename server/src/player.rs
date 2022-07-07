@@ -73,4 +73,11 @@ impl PlayerList {
         self.players.lock().unwrap()[index].info_public.make_active(name);
       }
     }
+
+    pub fn decrease_score(&self, name: &str) {
+      let index = self.players.lock().unwrap().iter().position(|p| p.info_public.name == name);
+      if let Some(index) = index {
+        self.players.lock().unwrap()[index].info_public.score -= 1;
+      }
+    }
 }

@@ -78,7 +78,7 @@ impl MessageHandler {
           value: ChallengeValue::Ok { used_time: 0.0, next_target },
         };
         self.game.push_reported_challenge_result(challenge_result);
-        debug!("get chain: {:?}", self.game.get_chain());
+        trace!("get chain: {:?}", self.game.get_chain());
         MessageType::boardcast(Message::RoundSummary {
           challenge: get_name_of_challenge_type(challenge),
           chain: self.game.get_chain(),

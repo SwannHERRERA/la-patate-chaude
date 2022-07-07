@@ -1,6 +1,6 @@
 use std::{sync::{Mutex, Arc}, time::{Duration, Instant}, collections::HashSet};
 
-use log::{trace, error};
+use log::{trace, error, debug};
 use shared::{challenge::{ChallengeType, ReportedChallengeResult}, public_player::PublicPlayer, config};
 
 use crate::player::{PlayerList, Player};
@@ -14,6 +14,7 @@ pub struct Round {
   pub start: Instant,
   pub last_resolved: Instant,
   pub duration: Duration,
+  pub acctual_player: Option<PlayerName>,
 }
 
 impl Round {
@@ -23,6 +24,7 @@ impl Round {
       start: Instant::now(),
       last_resolved: Instant::now(),
       duration,
+      acctual_player: None,
     }
   }
 }
@@ -69,6 +71,15 @@ impl Game {
     self.challenge.lock().unwrap().replace(challenge);
   }
 
+  pub fn set_active_player(&self, name: String) {
+    let mut round = self.current_round.lock().unwrap();
+    debug!("set_active_player lock: {:?}", round);
+    if let Some(round) = &mut *round {
+      round.acctual_player = Some(name);
+    }
+    drop(round);
+  }
+
   pub fn update_winner(&mut self, client_id: &str) {
     let player = self.players.get_and_remove_player_by_stream_id(client_id.to_string());
     if let Some(mut player) = player {
@@ -84,6 +95,11 @@ impl Game {
       self.players.add_player(player);
       trace!("players: {:?}", self.players);
     }
+  }
+
+  pub fn update_score(&self, name: &str) {
+    self.players.decrease_score(name);
+
   }
 
   pub fn get_chain(&self) -> Vec<ReportedChallengeResult> {

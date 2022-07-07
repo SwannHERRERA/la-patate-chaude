@@ -40,10 +40,16 @@ impl Exchanger {
 
   fn check_end_challenge(&mut self, response: MessageType, client_id: String) {
     if matches!(response.message, Message::RoundSummary { .. }) {
+      let mut current_round = self.game.current_round.lock().unwrap();
+      if let Some(current_round) = &mut *current_round {
+        let acctual_player = current_round.acctual_player.clone().expect("No acctual player when challenge end");
+        self.game.update_score(acctual_player.as_str());
+      }
+      drop(current_round);
+
       trace!("End of challenge");
         let challenge = self.get_new_challenge();
-        debug!("chain: {:?}", self.game.chain);
-        // send challenge to the good person
+        trace!("chain: {:?}", self.game.chain);
         if let Some(challenge_result) = self.game.get_last_chain_result() {
           debug!("{:?}", challenge_result);
           match &challenge_result.value {
@@ -51,6 +57,7 @@ impl Exchanger {
             ChallengeValue::BadResult { used_time: _, next_target } | ChallengeValue::Ok { used_time: _, next_target } => {
               let message = Message::Challenge(challenge);
               if let Some(player) = self.game.get_player_by_name(next_target) {
+                self.game.set_active_player(player.name.clone());
                 self.tx.send(MessageType::unicast(message, player.stream_id)).unwrap();
               }
             },
@@ -99,6 +106,7 @@ impl Exchanger {
     }
     let player = player.unwrap();
     self.game.start_round();
+    self.game.set_active_player(player.name.clone());
 
     MessageType::unicast(message, player.stream_id)
   }
