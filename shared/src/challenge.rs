@@ -6,6 +6,7 @@ use hashcash::{
     dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput},
     hashcash::Hashcash,
 };
+use monstrous_maze::challenge_generator::validate_maze_challenge;
 use monstrous_maze::challenge_resolve::MonstrousMazeResolver;
 use monstrous_maze::models::{MonstrousMaze, MonstrousMazeInput, MonstrousMazeOutput};
 use recover_secret::challenge_generator::validate_challenge;
@@ -109,7 +110,7 @@ impl Challenge for MonstrousMaze{
     }
 
     fn verify(&self, answer: Self::Output) -> bool {
-        todo!()
+        validate_maze_challenge(&self.0, &answer)
     }
 }
 
@@ -146,4 +147,12 @@ pub enum GameType {
     HashCash,
     RecoverSecret,
     MonstrousMaze,
+}
+
+pub fn get_name_of_challenge_type(challenge_type: ChallengeType) -> String {
+    match challenge_type {
+        ChallengeType::MD5HashCash(_) => MD5HashCash::name(),
+        ChallengeType::RecoverSecret(_) => todo!(),
+        ChallengeType::MonstrousMaze(_) => todo!(),
+    }
 }
