@@ -34,7 +34,7 @@ impl Debug for PublicPlayer {
       if self.is_active == false {
         write!(f, "Player Inactive: {}\n", self.stream_id)?
       }
-      write!(f, "{}: {}\t step: {}, total time: {} | {}\n", self.name, self.score, self.steps, self.total_used_time, self.stream_id)
+      write!(f, "{}: {}\tstep: {}, total time: {} | {}\n", self.name, self.score, self.steps, self.total_used_time, self.stream_id)
     }
 }
 

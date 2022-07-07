@@ -71,7 +71,7 @@ impl MessageHandler {
           ChallengeType::MD5HashCash(challenge) => Hashcash::verify(answer.hashcode, challenge.0.complexity),
         };
         if has_pass_challenge {
-          self.game.add_point(client_id.as_str());
+          self.game.update_winner(client_id.as_str());
         }
         let challenge_result = ReportedChallengeResult {
           name: get_name_of_challenge_type(challenge.clone()),

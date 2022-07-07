@@ -1,18 +1,30 @@
-use std::{sync::{Mutex, Arc}, time::{Duration, Instant}};
+use std::{sync::{Mutex, Arc}, time::{Duration, Instant}, collections::HashSet};
 
-use log::trace;
-use shared::{challenge::{ChallengeType, ReportedChallengeResult}, public_player::PublicPlayer};
+use log::{trace, error};
+use shared::{challenge::{ChallengeType, ReportedChallengeResult}, public_player::PublicPlayer, config};
 
 use crate::player::{PlayerList, Player};
 
 
-pub type PlayerId = String;
+pub type PlayerName = String;
 
 #[derive(Debug)]
 pub struct Round {
-  pub solvers: Vec<PlayerId>,
+  pub solvers: HashSet<PlayerName>,
   pub start: Instant,
+  pub last_resolved: Instant,
   pub duration: Duration,
+}
+
+impl Round {
+  pub fn new(duration: Duration) -> Round {
+    Round {
+      solvers: HashSet::new(),
+      start: Instant::now(),
+      last_resolved: Instant::now(),
+      duration,
+    }
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -57,11 +69,18 @@ impl Game {
     self.challenge.lock().unwrap().replace(challenge);
   }
 
-  pub fn add_point(&mut self, client_id: &str) {
+  pub fn update_winner(&mut self, client_id: &str) {
     let player = self.players.get_and_remove_player_by_stream_id(client_id.to_string());
     if let Some(mut player) = player {
-      player.info_public.steps += 1;
-      // todo use a bool per user for know if they have played
+      let mut current_round = self.current_round.lock().unwrap();
+      if let Some(current_round) = &mut *current_round {
+        current_round.solvers.insert(player.info_public.name.clone());
+        player.info_public.steps += 1;
+        player.info_public.total_used_time += current_round.last_resolved.elapsed().as_micros() as f64;
+      } else {
+        error!("No current round to update winner");
+      }
+
       self.players.add_player(player);
       trace!("players: {:?}", self.players);
     }
@@ -81,6 +100,11 @@ impl Game {
 
   pub fn get_player_by_name(&self, name: &str) -> Option<PublicPlayer> {
     self.players.get_player_by_name(name)
+  }
+
+  pub fn start_round(&self) {
+    let current_round = Round::new(config::ROUND_DURATION);
+    self.current_round.lock().unwrap().replace(current_round);
   }
 }
 // match challenge_type.as_str() {

@@ -98,6 +98,8 @@ impl Exchanger {
       panic!("No player found");
     }
     let player = player.unwrap();
+    self.game.start_round();
+
     MessageType::unicast(message, player.stream_id)
   }
 
