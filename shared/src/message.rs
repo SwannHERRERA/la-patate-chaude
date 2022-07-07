@@ -10,8 +10,12 @@ pub type PublicLeaderBoard = Vec<PublicPlayer>;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Message {
     Hello,
-    Welcome { version: u8 },
-    Subscribe { name: String },
+    Welcome {
+        version: u8,
+    },
+    Subscribe {
+        name: String,
+    },
     SubscribeResult(SubscribeResult),
     PublicLeaderBoard(PublicLeaderBoard),
     Challenge(ChallengeType),
@@ -51,7 +55,6 @@ impl MessageType {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::subscribe::SubscribeError;
@@ -74,7 +77,9 @@ mod tests {
 
     #[test]
     fn test_subscribe_serialization() {
-        let message = Message::Subscribe { name: "test".to_string() };
+        let message = Message::Subscribe {
+            name: "test".to_string(),
+        };
         let serialized = serde_json::to_string(&message).unwrap();
         assert_eq!(serialized, "{\"Subscribe\":{\"name\":\"test\"}}");
     }
@@ -90,6 +95,9 @@ mod tests {
     fn test_subscribe_result_failure_serialization() {
         let message = Message::SubscribeResult(SubscribeResult::Err(SubscribeError::InvalidName));
         let serialized = serde_json::to_string(&message).unwrap();
-        assert_eq!(serialized, "{\"SubscribeResult\":{\"Err\":\"InvalidName\"}}");
+        assert_eq!(
+            serialized,
+            "{\"SubscribeResult\":{\"Err\":\"InvalidName\"}}"
+        );
     }
 }
