@@ -1,12 +1,15 @@
 use std::collections::HashSet;
 
-use log::error;
+use log::{error};
 use rand::seq::SliceRandom;
 use rand::Rng;
 
 use utils::file_utils::read_mazes_file_macro;
 
-use crate::challenge_resolve::{can_go_down, can_go_left, can_go_right, can_go_up, get_monstrous_maze_map_from_input, is_player_on_monster_position};
+use crate::challenge_resolve::{
+    can_go_down, can_go_left, can_go_right, can_go_up, get_monstrous_maze_map_from_input,
+    is_player_on_monster_position,
+};
 use crate::models::{MonstrousMazeInput, MonstrousMazeOutput};
 
 pub fn generate_monstrous_maze_challenge() -> MonstrousMazeInput {
@@ -84,8 +87,9 @@ pub fn validate_maze_challenge(
 #[cfg(test)]
 mod tests {
     use utils::file_utils::read_file;
+
     use crate::challenge_generator::{generate_monstrous_maze_challenge, validate_maze_challenge};
-    use crate::challenge_resolve::{get_monstrous_maze_map_from_input};
+    use crate::challenge_resolve::{get_monstrous_maze_map_from_input, MonstrousMazeResolver};
     use crate::models::{MonstrousMazeInput, MonstrousMazeOutput};
 
     #[test]
@@ -105,20 +109,18 @@ mod tests {
             .map(|maze| maze.replace("\\n", "\n"))
             .collect();
 
-        let answers: Vec<String> = read_file("data/mazes_answers.txt")
-            .split('\n')
-            .map(|answer| answer.to_string())
-            .collect();
-
-        mazes.iter().enumerate().for_each(|(index, maze)| {
+        mazes.iter().for_each(|maze| {
             let input = MonstrousMazeInput {
                 endurance: 2,
                 grid: maze.to_string(),
             };
-            let output = MonstrousMazeOutput{
-                path: answers.get(index).expect("Unable to get answer").to_string(),
-            };
-            assert_eq!(validate_maze_challenge(&input, &output), true);
+            assert_eq!(
+                validate_maze_challenge(
+                    &input,
+                    &MonstrousMazeResolver::resolve_monstrous_maze_challenge(&input)
+                ),
+                true
+            );
         })
     }
 

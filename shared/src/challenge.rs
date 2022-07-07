@@ -152,9 +152,9 @@ pub enum GameType {
 impl From<&str> for GameType {
     fn from(s: &str) -> Self {
         match s {
-            "hashcash" => GameType::HashCash,
-            "recoversecret" => GameType::RecoverSecret,
-            "monstrousmaze" => GameType::MonstrousMaze,
+            "hash-cash" => GameType::HashCash,
+            "recover-secret" => GameType::RecoverSecret,
+            "monstrous-maze" => GameType::MonstrousMaze,
             _ => panic!("Unknown game type"),
         }
     }
