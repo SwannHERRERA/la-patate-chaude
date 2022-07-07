@@ -9,7 +9,12 @@ pub fn read_file(file_path: &str) -> String {
     contents
 }
 
-pub fn read_file_macro() -> String {
+pub fn read_dic_file_macro() -> String {
     let str = include_str!("../../data/liste-de-ses-morts.dic");
+    str.to_string()
+}
+
+pub fn read_mazes_file_macro() -> String {
+    let str = include_str!("../../data/mazes.txt");
     str.to_string()
 }

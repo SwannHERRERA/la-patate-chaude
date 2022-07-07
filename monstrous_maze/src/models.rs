@@ -14,7 +14,7 @@ pub struct MonstrousMazeOutput {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MonstrousMaze(pub MonstrousMazeInput);
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct MonstrousMazeMap {
     pub map: Vec<String>,
     pub map_height: usize,
