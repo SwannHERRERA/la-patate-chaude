@@ -88,6 +88,7 @@ impl Exchanger {
 
             trace!("End of challenge");
             let challenge = self.get_new_challenge();
+            self.game.set_challenge(challenge.clone());
             trace!("chain: {:?}", self.game.chain);
             if let Some(challenge_result) = self.game.get_last_chain_result() {
                 debug!("{:?}", challenge_result);
