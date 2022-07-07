@@ -1,8 +1,6 @@
-use hashcash::dto::{MD5HashCash, MD5HashCashOutput};
-use hashcash::hashcash::Hashcash;
+
 use log::{info, debug, trace, error};
-use recover_secret::models::{RecoverSecret, RecoverSecretOutput};
-use shared::challenge::{ChallengeType, ChallengeAnswer, get_name_of_challenge_type, ReportedChallengeResult, ChallengeValue};
+use shared::challenge::{ChallengeType, ChallengeAnswer, get_name_of_challenge_type, ReportedChallengeResult, ChallengeValue, Challenge};
 use shared::message::{Message, MessageType};
 use shared::subscribe::{SubscribeResult, SubscribeError};
 
@@ -66,28 +64,17 @@ impl MessageHandler {
   fn handle_challenge_result(&mut self, challenge: Option<ChallengeType>, answer: ChallengeAnswer, next_target: String, client_id: String) -> MessageType {
     match challenge {
       Some(challenge) => {
-        let answer = match answer {
-            ChallengeAnswer::MD5HashCash(output) => output,
-            ChallengeAnswer::RecoverSecret(_) => todo!(),
-            ChallengeAnswer::MonstrousMaze(_) => todo!(),
-
-        };
-        let has_pass_challenge = match &challenge {
-          ChallengeType::MD5HashCash(challenge) => Hashcash::verify(answer.hashcode, challenge.0.complexity),
-            ChallengeType::RecoverSecret(_) => todo!(),
-            ChallengeType::MonstrousMaze(_) => todo!(),
-        };
-        if has_pass_challenge {
+        if self.has_pass_challenge(answer, &challenge) {
           self.game.update_winner(client_id.as_str());
         }
         let challenge_result = ReportedChallengeResult {
-          name: get_name_of_challenge_type(challenge.clone()),
+          name: get_name_of_challenge_type(&self.game.game_type),
           value: ChallengeValue::Ok { used_time: 0.0, next_target },
         };
         self.game.push_reported_challenge_result(challenge_result);
         trace!("get chain: {:?}", self.game.get_chain());
         MessageType::boardcast(Message::RoundSummary {
-          challenge: get_name_of_challenge_type(challenge),
+          challenge: get_name_of_challenge_type(&self.game.game_type),
           chain: self.game.get_chain(),
         })
       }
@@ -97,33 +84,24 @@ impl MessageHandler {
       }
     }
   }
-
-
-    fn handle_md5(
-        &self,
-        challenge: MD5HashCash,
-        answer: ChallengeAnswer,
-    ) -> (MD5HashCash, MD5HashCashOutput) {
-        match answer {
-            ChallengeAnswer::MD5HashCash(answer) => {
-                return (challenge, answer);
-            }
-            _ => panic!("Wrong challenge type"),
+  fn has_pass_challenge(&self, answer: ChallengeAnswer, challenge: &ChallengeType) -> bool {
+    match answer {
+      ChallengeAnswer::MD5HashCash(output) => {
+        match challenge {
+          ChallengeType::MD5HashCash(challenge) => challenge.verify(output),
+          _ => panic!("Challenge is not MD5HashCash")
         }
-    }
-
-    fn handle_recover_secret(
-        &self,
-        challenge: RecoverSecret,
-        answer: ChallengeAnswer,
-    ) -> (RecoverSecret, RecoverSecretOutput) {
-        match answer {
-            ChallengeAnswer::RecoverSecret(answer) => {
-                return (challenge, answer);
-            }
-            _ => panic!("Wrong challenge type"),
+      },
+      ChallengeAnswer::RecoverSecret(output) => {
+        match challenge {
+          ChallengeType::RecoverSecret(challenge) => challenge.verify(output),
+          _ => panic!("Challenge is not RecoverSecret")
         }
+      },
+      ChallengeAnswer::MonstrousMaze(_) => todo!(),
+
     }
+  }
 }
 
 
