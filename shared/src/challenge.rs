@@ -149,10 +149,22 @@ pub enum GameType {
     MonstrousMaze,
 }
 
-pub fn get_name_of_challenge_type(challenge_type: ChallengeType) -> String {
-    match challenge_type {
-        ChallengeType::MD5HashCash(_) => MD5HashCash::name(),
-        ChallengeType::RecoverSecret(_) => todo!(),
-        ChallengeType::MonstrousMaze(_) => todo!(),
+impl From<&str> for GameType {
+    fn from(s: &str) -> Self {
+        match s {
+            "hash-cash" => GameType::HashCash,
+            "recover-secret" => GameType::RecoverSecret,
+            "monstrous-maze" => GameType::MonstrousMaze,
+            _ => panic!("Unknown game type"),
+        }
+    }
+}
+
+
+pub fn get_name_of_challenge_type(game_type: &GameType) -> String {
+    match game_type {
+        GameType::HashCash => MD5HashCash::name(),
+        GameType::RecoverSecret => RecoverSecret::name(),
+        GameType::MonstrousMaze => MonstrousMaze::name(),
     }
 }

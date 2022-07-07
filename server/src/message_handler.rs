@@ -1,131 +1,127 @@
-use hashcash::dto::{MD5HashCash, MD5HashCashOutput};
-use hashcash::hashcash::Hashcash;
-use log::{info, debug, trace, error};
-use recover_secret::models::{RecoverSecret, RecoverSecretOutput};
-use shared::challenge::{ChallengeType, ChallengeAnswer, get_name_of_challenge_type, ReportedChallengeResult, ChallengeValue};
+use log::{debug, error, info, trace};
+use shared::challenge::{
+    get_name_of_challenge_type, Challenge, ChallengeAnswer, ChallengeType, ChallengeValue,
+    ReportedChallengeResult,
+};
 use shared::message::{Message, MessageType};
-use shared::subscribe::{SubscribeResult, SubscribeError};
+use shared::subscribe::{SubscribeError, SubscribeResult};
 
 use crate::game::Game;
 #[derive(Debug)]
 pub struct MessageHandler {
-  game: Game,
+    game: Game,
 }
 
 impl MessageHandler {
-  pub fn new(game: Game) -> MessageHandler {
-    MessageHandler { game }
-  }
-
-  pub fn handle_message(&mut self, message: Message, client_id: String, current_challenge: Option<ChallengeType>) -> MessageType {
-      info!("Incomming Message: {:?}", message);
-      match message {
-        Message::Hello => self.handle_hello(client_id),
-        Message::Subscribe { name } => self.handle_subscribtion(name, client_id),
-        Message::StartGame {  } => self.handle_start_game(),
-        Message::ChallengeResult { answer, next_target } => self.handle_challenge_result(current_challenge, answer, next_target, client_id),
-        Message::EndOfCommunication =>self.handle_end_of_communication(client_id),
-        _ => panic!("Not implemented")
-      }
-  }
-
-  fn handle_subscribtion(&mut self, name: String, client_id: String) -> MessageType {
-    let answer = if self.game.players.has_player_with_name(&name) {
-      Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))
-    } else {
-      Message::SubscribeResult(SubscribeResult::Ok)
-    };
-    let answer = MessageType::unicast(answer, client_id.clone());
-    self.game.players.activate_player(client_id.as_str(), name.as_str());
-    trace!("Answer: {:?}", answer);
-    trace!("game: {:?}", self.game);
-    answer
-  }
-
-  fn handle_hello(&self, client_id: String) -> MessageType {
-    let answer = MessageType::unicast(Message::Welcome { version: 1 }, client_id);
-    trace!("Answer: {:?}", answer);
-    answer
-  }
-
-  fn handle_start_game(&self) -> MessageType {
-    let start_game_message = Message::PublicLeaderBoard(self.game.get_players());
-    debug!("Start Game Message: {:?}", start_game_message);
-    let answer = MessageType::boardcast(start_game_message);
-    trace!("Answer: {:?}", answer);
-    answer
-  }
-
-  fn handle_end_of_communication(&self, client_id: String) -> MessageType {
-    let answer = MessageType::unicast(Message::EndOfCommunication, client_id.clone());
-    info!("end of com with client id: {:?}", client_id);
-    trace!("Answer: {:?}", answer);
-    answer
-  }
-
-  fn handle_challenge_result(&mut self, challenge: Option<ChallengeType>, answer: ChallengeAnswer, next_target: String, client_id: String) -> MessageType {
-    match challenge {
-      Some(challenge) => {
-        let answer = match answer {
-            ChallengeAnswer::MD5HashCash(output) => output,
-            ChallengeAnswer::RecoverSecret(_) => todo!(),
-            ChallengeAnswer::MonstrousMaze(_) => todo!(),
-
-        };
-        let has_pass_challenge = match &challenge {
-          ChallengeType::MD5HashCash(challenge) => Hashcash::verify(answer.hashcode, challenge.0.complexity),
-            ChallengeType::RecoverSecret(_) => todo!(),
-            ChallengeType::MonstrousMaze(_) => todo!(),
-        };
-        if has_pass_challenge {
-          self.game.update_winner(client_id.as_str());
-        }
-        let challenge_result = ReportedChallengeResult {
-          name: get_name_of_challenge_type(challenge.clone()),
-          value: ChallengeValue::Ok { used_time: 0.0, next_target },
-        };
-        self.game.push_reported_challenge_result(challenge_result);
-        trace!("get chain: {:?}", self.game.get_chain());
-        MessageType::boardcast(Message::RoundSummary {
-          challenge: get_name_of_challenge_type(challenge),
-          chain: self.game.get_chain(),
-        })
-      }
-      None => {
-        error!("No challenge to answer");
-        panic!("No challenge to answer, current_challenge is None");
-      }
+    pub fn new(game: Game) -> MessageHandler {
+        MessageHandler { game }
     }
-  }
 
-
-    fn handle_md5(
-        &self,
-        challenge: MD5HashCash,
-        answer: ChallengeAnswer,
-    ) -> (MD5HashCash, MD5HashCashOutput) {
-        match answer {
-            ChallengeAnswer::MD5HashCash(answer) => {
-                return (challenge, answer);
-            }
-            _ => panic!("Wrong challenge type"),
+    pub fn handle_message(
+        &mut self,
+        message: Message,
+        client_id: String,
+        current_challenge: Option<ChallengeType>,
+    ) -> MessageType {
+        debug!("Incoming Message: {:?}", message);
+        match message {
+            Message::Hello => self.handle_hello(client_id),
+            Message::Subscribe { name } => self.handle_subscription(name, client_id),
+            Message::StartGame {} => self.handle_start_game(),
+            Message::ChallengeResult {
+                answer,
+                next_target,
+            } => self.handle_challenge_result(current_challenge, answer, next_target, client_id),
+            Message::EndOfCommunication => self.handle_end_of_communication(client_id),
+            _ => panic!("Not implemented"),
         }
     }
 
-    fn handle_recover_secret(
-        &self,
-        challenge: RecoverSecret,
+    fn handle_subscription(&mut self, name: String, client_id: String) -> MessageType {
+        let answer = if self.game.players.has_player_with_name(&name) {
+            Message::SubscribeResult(SubscribeResult::Err(SubscribeError::AlreadyRegistered))
+        } else {
+            Message::SubscribeResult(SubscribeResult::Ok)
+        };
+        let answer = MessageType::unicast(answer, client_id.clone());
+        self.game
+            .players
+            .activate_player(client_id.as_str(), name.as_str());
+        trace!("Answer: {:?}", answer);
+        trace!("game: {:?}", self.game);
+        answer
+    }
+
+    fn handle_hello(&self, client_id: String) -> MessageType {
+        let answer = MessageType::unicast(Message::Welcome { version: 1 }, client_id);
+        trace!("Answer: {:?}", answer);
+        answer
+    }
+
+    fn handle_start_game(&self) -> MessageType {
+        let start_game_message = Message::PublicLeaderBoard(self.game.get_players());
+        debug!("Start Game Message: {:?}", start_game_message);
+        let answer = MessageType::boardcast(start_game_message);
+        trace!("Answer: {:?}", answer);
+        answer
+    }
+
+    fn handle_end_of_communication(&self, client_id: String) -> MessageType {
+        info!("end of communication with client id: {:?}", client_id);
+        let answer = MessageType::unicast(Message::EndOfCommunication, client_id);
+        trace!("Answer: {:?}", answer);
+        answer
+    }
+
+    fn handle_challenge_result(
+        &mut self,
+        challenge: Option<ChallengeType>,
         answer: ChallengeAnswer,
-    ) -> (RecoverSecret, RecoverSecretOutput) {
-        match answer {
-            ChallengeAnswer::RecoverSecret(answer) => {
-                return (challenge, answer);
+        next_target: String,
+        client_id: String,
+    ) -> MessageType {
+        match challenge {
+            Some(challenge) => {
+                if self.has_pass_challenge(answer, &challenge) {
+                    self.game.update_winner(client_id.as_str());
+                }
+                let challenge_result = ReportedChallengeResult {
+                    name: get_name_of_challenge_type(&self.game.game_type),
+                    value: ChallengeValue::Ok {
+                        used_time: 0.0,
+                        next_target,
+                    },
+                };
+                self.game.push_reported_challenge_result(challenge_result);
+                trace!("get chain: {:?}", self.game.get_chain());
+                MessageType::boardcast(Message::RoundSummary {
+                    challenge: get_name_of_challenge_type(&self.game.game_type),
+                    chain: self.game.get_chain(),
+                })
             }
-            _ => panic!("Wrong challenge type"),
+            None => {
+                error!("No challenge to answer");
+                panic!("No challenge to answer, current_challenge is None");
+            }
+        }
+    }
+    fn has_pass_challenge(&self, answer: ChallengeAnswer, challenge: &ChallengeType) -> bool {
+        match answer {
+            ChallengeAnswer::MD5HashCash(output) => match challenge {
+                ChallengeType::MD5HashCash(challenge) => challenge.verify(output),
+                _ => panic!("Challenge is not MD5HashCash"),
+            },
+            ChallengeAnswer::RecoverSecret(output) => match challenge {
+                ChallengeType::RecoverSecret(challenge) => challenge.verify(output),
+                _ => panic!("Challenge is not RecoverSecret"),
+            },
+            ChallengeAnswer::MonstrousMaze(output) => match challenge {
+                ChallengeType::MonstrousMaze(challenge) => challenge.verify(output),
+                _ => panic!("Challenge is not MonstrousMaze"),
+            },
         }
     }
 }
-
 
 // #[cfg(test)]
 // mod tests {

@@ -818,8 +818,10 @@ dependencies = [
 name = "server"
 version = "0.1.0"
 dependencies = [
+ "clap 3.2.8",
  "hashcash",
  "log",
+ "monstrous_maze",
  "pretty_env_logger",
  "rand",
  "recover_secret",
