@@ -170,7 +170,7 @@ fn process_down_path(
     None
 }
 
-fn get_monstrous_maze_map_from_input(
+pub fn get_monstrous_maze_map_from_input(
     monstrous_maze_input: &MonstrousMazeInput,
 ) -> MonstrousMazeMap {
     let map: Vec<String> = monstrous_maze_input
@@ -225,7 +225,7 @@ fn find_char_position_in_vec_map(char: &char, map: &Vec<String>) -> Option<Posit
     None
 }
 
-fn can_go_up(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> bool {
+pub fn can_go_up(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> bool {
     let player_position: &Position = &map.player_position;
     if player_position.y == 0
         || is_wall(
@@ -245,7 +245,7 @@ fn can_go_up(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> boo
     true
 }
 
-fn can_go_down(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> bool {
+pub fn can_go_down(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> bool {
     let player_position: &Position = &map.player_position;
     if player_position.y == map.map_height - 1
         || is_wall(
@@ -265,7 +265,7 @@ fn can_go_down(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> b
     true
 }
 
-fn can_go_right(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> bool {
+pub fn can_go_right(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> bool {
     let player_position: &Position = &map.player_position;
     if player_position.x == map.map_width - 1
         || is_wall(
@@ -285,7 +285,7 @@ fn can_go_right(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> 
     true
 }
 
-fn can_go_left(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> bool {
+pub fn can_go_left(map: &MonstrousMazeMap, already_visited: &HashSet<Position>) -> bool {
     let player_position: &Position = &map.player_position;
     if player_position.x == 0
         || is_wall(
@@ -309,7 +309,7 @@ fn is_wall(char: &char) -> bool {
     *char == WALL_TOKEN
 }
 
-fn is_player_on_monster_position(map: &MonstrousMazeMap) -> bool {
+pub fn is_player_on_monster_position(map: &MonstrousMazeMap) -> bool {
     return map.map[map.player_position.y]
         .chars()
         .nth(map.player_position.x)
