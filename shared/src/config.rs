@@ -7,4 +7,4 @@ pub const PORT: u16 = 7878;
 pub const LOG_LEVEL: &'static str = "debug";
 pub const CHALLENGE_TYPE: &'static str = "hashcash";
 pub const ROUND_DURATION: Duration = Duration::from_secs(3);
-pub const GAME_TYPE: GameType = GameType::HashCash;
+pub const GAME_TYPE: GameType = GameType::RecoverSecret;

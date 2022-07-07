@@ -1,7 +1,7 @@
 use std::{sync::{Mutex, Arc}, time::{Duration, Instant}, collections::HashSet};
 
 use log::{trace, error, debug};
-use shared::{challenge::{ChallengeType, ReportedChallengeResult}, public_player::PublicPlayer, config};
+use shared::{challenge::{ChallengeType, ReportedChallengeResult, GameType}, public_player::PublicPlayer, config};
 
 use crate::player::{PlayerList, Player};
 
@@ -33,14 +33,14 @@ impl Round {
 pub struct Game {
   pub players: PlayerList,
   pub challenge: Arc<Mutex<Option<ChallengeType>>>,
-  pub challenge_type: String,
+  pub game_type: GameType,
   pub chain: Arc<Mutex<Vec<ReportedChallengeResult>>>,
   pub rounds: Arc<Mutex<Vec<Round>>>,
   pub current_round: Arc<Mutex<Option<Round>>>,
 }
 
 impl Game {
-  pub fn new(challenge_type: String) -> Game {
+  pub fn new(game_type: GameType) -> Game {
     let players = PlayerList::new();
     let challenge = Arc::new(Mutex::new(None));
     let chain = Arc::new(Mutex::new(Vec::new()));
@@ -49,7 +49,7 @@ impl Game {
     Game {
       players,
       challenge,
-      challenge_type,
+      game_type,
       chain,
       rounds,
       current_round,

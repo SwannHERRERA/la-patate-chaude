@@ -17,8 +17,8 @@ pub struct Server {
 }
 
 impl Server {
-  pub fn new(listener: TcpListener, challenge_type: &str) -> Server {
-    Server { listener, game: Game::new(challenge_type.to_string()) }
+  pub fn new(listener: TcpListener, game: Game ) -> Server {
+    Server { listener, game }
   }
 
   pub fn listen(&mut self) {

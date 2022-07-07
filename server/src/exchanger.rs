@@ -2,7 +2,8 @@ use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::Read};
 
 use hashcash::dto::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info, error, debug};
-use shared::{message::{Message, MessageType, PublicLeaderBoard}, challenge::{ChallengeType, ChallengeValue}};
+use recover_secret::{models::RecoverSecret, challenge_generator::generate_challenge};
+use shared::{message::{Message, MessageType, PublicLeaderBoard}, challenge::{ChallengeType, ChallengeValue, GameType}};
 
 use crate::{game::Game, message_handler::MessageHandler};
 
@@ -121,21 +122,19 @@ impl Exchanger {
     MessageType::unicast(message, player.stream_id)
   }
 
-        match self.game.game_type {
-            GameType::HashCash => {
-                challenge = ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()));
-            }
-            GameType::RecoverSecret => {
-                challenge = ChallengeType::RecoverSecret(RecoverSecret(generate_challenge()));
-            }
+  fn get_new_challenge(&self) -> ChallengeType {
+    match self.game.game_type {
+      GameType::HashCash => {
+          ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()))
+      }
+      GameType::RecoverSecret => {
+          ChallengeType::RecoverSecret(RecoverSecret(generate_challenge()))
+      }
 
-            GameType::MonstrousMaze => {
-                panic!("MonstrousMaze not implemented yet");
-            }
-        }
-
-        let message = Message::Challenge(challenge);
-        MessageType::unicast(message)
+      GameType::MonstrousMaze => {
+          todo!()
+      }
     }
   }
+
 }

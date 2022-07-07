@@ -13,6 +13,7 @@ fn main() {
   std::env::set_var("RUST_LOG", config::LOG_LEVEL);
   pretty_env_logger::init();
   let listener = create_listener();
-  let mut server: Server = Server::new(listener, config::CHALLENGE_TYPE);
+  let game = game::Game::new(config::GAME_TYPE);
+  let mut server: Server = Server::new(listener, game);
   server.listen();
 }
