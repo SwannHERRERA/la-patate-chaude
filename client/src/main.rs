@@ -18,7 +18,7 @@ use rand::Rng;
 
 use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType, DictionaryChallenge};
-use shared::config::{IP, LOG_LEVEL, PORT};
+use shared::config::LOG_LEVEL;
 use shared::message::Message::ChallengeResult;
 use shared::message::{Message, PublicLeaderBoard};
 use shared::subscribe::SubscribeResult;
@@ -70,9 +70,7 @@ fn main() {
     THREAD_COUNT.store(args.thread_count, Ordering::Relaxed);
     THREAD_SEED_SLICE.store(args.thread_seed_slice, Ordering::Relaxed);
     std::env::set_var("RUST_LOG", LOG_LEVEL);
-    let address = SocketAddr::from((IP, PORT));
-
-    match TcpStream::connect(address) {
+    match TcpStream::connect(format!("{}:{}", args.ip, args.port).as_str()) {
         Ok(stream) => {
             let client = Client::new(&args);
             client.start_threads(stream);
