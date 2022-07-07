@@ -1,4 +1,4 @@
-use std::collections::{HashSet};
+use std::collections::HashSet;
 use std::net::{Shutdown, SocketAddr};
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
@@ -71,7 +71,7 @@ fn main() {
     THREAD_SEED_SLICE.store(args.thread_seed_slice, Ordering::Relaxed);
     std::env::set_var("RUST_LOG", LOG_LEVEL);
     pretty_env_logger::init();
-    let address = SocketAddr::from((IP, PORT));
+    let address = SocketAddr::from(format!("{}:{}", args.ip, args.port).as_str());
     match TcpStream::connect(address) {
         Ok(stream) => {
             let client = Client::new(&args);

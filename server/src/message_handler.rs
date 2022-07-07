@@ -1,5 +1,7 @@
+use hashcash::dto::{MD5HashCash, MD5HashCashOutput};
 use hashcash::hashcash::Hashcash;
 use log::{info, debug, trace, error};
+use recover_secret::models::{RecoverSecret, RecoverSecretOutput};
 use shared::challenge::{ChallengeType, ChallengeAnswer, get_name_of_challenge_type, ReportedChallengeResult, ChallengeValue};
 use shared::message::{Message, MessageType};
 use shared::subscribe::{SubscribeResult, SubscribeError};
@@ -66,9 +68,14 @@ impl MessageHandler {
       Some(challenge) => {
         let answer = match answer {
             ChallengeAnswer::MD5HashCash(output) => output,
+            ChallengeAnswer::RecoverSecret(_) => todo!(),
+            ChallengeAnswer::MonstrousMaze(_) => todo!(),
+
         };
         let has_pass_challenge = match &challenge {
           ChallengeType::MD5HashCash(challenge) => Hashcash::verify(answer.hashcode, challenge.0.complexity),
+            ChallengeType::RecoverSecret(_) => todo!(),
+            ChallengeType::MonstrousMaze(_) => todo!(),
         };
         if has_pass_challenge {
           self.game.update_winner(client_id.as_str());
@@ -89,44 +96,8 @@ impl MessageHandler {
         panic!("No challenge to answer, current_challenge is None");
       }
     }
+  }
 
-    fn handle_challenge_result(
-        &self,
-        answer: ChallengeAnswer,
-        _next_target: String,
-        challenge: Option<ChallengeType>,
-    ) -> Option<MessageType> {
-        match challenge {
-            Some(challenge) => {
-                match challenge {
-                    ChallengeType::MD5HashCash(challenge) => {
-                        let (challenge, answer) = self.handle_md5(challenge, answer);
-                        if challenge.verify(answer) {
-                            // increase score of winning player
-                            return Some(MessageType::boardcast(Message::PublicLeaderBoard(
-                                self.players.get_players(),
-                            )));
-                        }
-                        None
-                    }
-                    ChallengeType::RecoverSecret(challenge) => {
-                        let (challenge, answer) = self.handle_recover_secret(challenge, answer);
-                        if challenge.verify(answer) {
-                            // increase score of winning player
-                            return Some(MessageType::boardcast(Message::PublicLeaderBoard(
-                                self.players.get_players(),
-                            )));
-                        }
-                        None
-                    }
-                }
-            }
-            None => {
-                error!("No challenge to answer");
-                panic!("No challenge to answer, current_challenge is None");
-            }
-        }
-    }
 
     fn handle_md5(
         &self,
@@ -154,6 +125,7 @@ impl MessageHandler {
         }
     }
 }
+
 
 // #[cfg(test)]
 // mod tests {

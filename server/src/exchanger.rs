@@ -13,14 +13,6 @@ pub struct Exchanger {
 }
 
 impl Exchanger {
-    pub fn new(message_handler: MessageHandler, tx: Sender<Message>, game: Game) -> Exchanger {
-        Exchanger {
-            message_handler,
-            tx,
-            game,
-        }
-    }
-
   pub fn new(message_handler: MessageHandler, game: Game, tx: Sender<MessageType>) -> Exchanger {
     Exchanger { message_handler, game, tx }
   }

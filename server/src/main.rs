@@ -1,4 +1,3 @@
-use game::Game;
 use server::{create_listener, Server};
 use shared::config;
 
@@ -8,7 +7,7 @@ mod game;
 mod message_handler;
 mod exchanger;
 mod server;
-mod game;
+
 
 fn main() {
   std::env::set_var("RUST_LOG", config::LOG_LEVEL);
