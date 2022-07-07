@@ -85,7 +85,7 @@ pub fn validate_maze_challenge(
 mod tests {
     use utils::file_utils::read_file;
     use crate::challenge_generator::{generate_monstrous_maze_challenge, validate_maze_challenge};
-    use crate::challenge_resolve::{get_monstrous_maze_map_from_input, MonstrousMazeResolver};
+    use crate::challenge_resolve::{get_monstrous_maze_map_from_input};
     use crate::models::{MonstrousMazeInput, MonstrousMazeOutput};
 
     #[test]
