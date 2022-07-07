@@ -17,7 +17,6 @@ use rand::Rng;
 
 use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType, DictionaryChallenge};
-use shared::config::LOG_LEVEL;
 use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
 use shared::subscribe::SubscribeResult;
@@ -62,13 +61,17 @@ pub struct ClientArgs {
     /// Enable cheat mode for recover secret challenge
     #[clap(long, value_parser, default_value_t = false)]
     pub cheat: bool,
+
+    /// Log level
+    #[clap(short, long, value_parser, default_value = "info")]
+    pub log_level: String,
 }
 
 fn main() {
     let args = ClientArgs::parse();
     THREAD_COUNT.store(args.thread_count, Ordering::Relaxed);
     THREAD_SEED_SLICE.store(args.thread_seed_slice, Ordering::Relaxed);
-    std::env::set_var("RUST_LOG", LOG_LEVEL);
+    std::env::set_var("RUST_LOG", &args.log_level);
     pretty_env_logger::init();
     match TcpStream::connect(format!("{}:{}", args.ip, args.port).as_str()) {
         Ok(stream) => {

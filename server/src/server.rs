@@ -3,7 +3,7 @@ use crate::game::Game;
 use crate::message_handler::MessageHandler;
 use crate::player::Player;
 use crate::utils::send_response;
-use std::net::{SocketAddr, TcpListener};
+use std::net::TcpListener;
 use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
 use log::{info, debug, warn, trace};
@@ -86,10 +86,9 @@ impl Server {
   }
 }
 
-pub fn create_listener() -> TcpListener {
-    let addr = SocketAddr::from((IP, PORT));
-    let listener = TcpListener::bind(addr);
-    info!("Start Listening on : {}", addr);
+pub fn create_listener(address: String) -> TcpListener {
+  info!("Start Listening on : {}", &address);
+    let listener = TcpListener::bind(address);
     match listener {
         Ok(l) => l,
         Err(err) => panic!("Cannot listen on port : {err:?}")

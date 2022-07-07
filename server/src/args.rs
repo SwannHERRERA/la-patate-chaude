@@ -19,7 +19,7 @@ pub struct ServerArgs {
   #[clap(short, long, value_parser, default_value = "hashcash")]
   pub game_type: String,
 
-  /// Round Duration
+  /// Round Duration in seconds
   #[clap(short, long, value_parser, default_value = "3")]
   pub round_duration: u64,
 }

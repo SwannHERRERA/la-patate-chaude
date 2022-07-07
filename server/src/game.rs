@@ -37,10 +37,11 @@ pub struct Game {
   pub chain: Arc<Mutex<Vec<ReportedChallengeResult>>>,
   pub rounds: Arc<Mutex<Vec<Round>>>,
   pub current_round: Arc<Mutex<Option<Round>>>,
+  pub round_duration: Duration,
 }
 
 impl Game {
-  pub fn new(game_type: GameType) -> Game {
+  pub fn new(game_type: GameType, round_duration: Duration) -> Game {
     let players = PlayerList::new();
     let challenge = Arc::new(Mutex::new(None));
     let chain = Arc::new(Mutex::new(Vec::new()));
@@ -53,6 +54,7 @@ impl Game {
       chain,
       rounds,
       current_round,
+      round_duration,
     }
   }
   pub fn add_player(&mut self, player: Player) {
@@ -119,7 +121,7 @@ impl Game {
   }
 
   pub fn start_round(&self) {
-    let current_round = Round::new(config::ROUND_DURATION);
+    let current_round = Round::new(self.round_duration);
     self.current_round.lock().unwrap().replace(current_round);
   }
 
