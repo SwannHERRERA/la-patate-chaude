@@ -98,8 +98,12 @@ impl MessageHandler {
           _ => panic!("Challenge is not RecoverSecret")
         }
       },
-      ChallengeAnswer::MonstrousMaze(_) => todo!(),
-
+      ChallengeAnswer::MonstrousMaze(output) => {
+        match challenge {
+          ChallengeType::MonstrousMaze(challenge) => challenge.verify(output),
+          _ => panic!("Challenge is not MonstrousMaze")
+        }
+      },
     }
   }
 }

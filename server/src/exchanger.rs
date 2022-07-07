@@ -2,6 +2,7 @@ use std::{sync::mpsc::Sender, net::{TcpStream, Shutdown}, io::Read};
 
 use hashcash::dto::{MD5HashCashInput, MD5HashCash};
 use log::{trace, warn, info, error, debug};
+use monstrous_maze::{models::MonstrousMaze, challenge_generator::generate_monstrous_maze_challenge};
 use recover_secret::{models::RecoverSecret, challenge_generator::generate_challenge};
 use shared::{message::{Message, MessageType, PublicLeaderBoard}, challenge::{ChallengeType, ChallengeValue, GameType}};
 
@@ -125,16 +126,17 @@ impl Exchanger {
   fn get_new_challenge(&self) -> ChallengeType {
     match self.game.game_type {
       GameType::HashCash => {
-          ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()))
+        ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()))
       }
       GameType::RecoverSecret => {
-          ChallengeType::RecoverSecret(RecoverSecret(generate_challenge()))
+        ChallengeType::RecoverSecret(RecoverSecret(generate_challenge()))
       }
 
       GameType::MonstrousMaze => {
-          todo!()
+        ChallengeType::MonstrousMaze(MonstrousMaze(generate_monstrous_maze_challenge()))
       }
     }
   }
 
 }
+
