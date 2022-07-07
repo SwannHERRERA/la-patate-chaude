@@ -89,9 +89,71 @@ impl MessageHandler {
         panic!("No challenge to answer, current_challenge is None");
       }
     }
-  }
-}
 
+    fn handle_challenge_result(
+        &self,
+        answer: ChallengeAnswer,
+        _next_target: String,
+        challenge: Option<ChallengeType>,
+    ) -> Option<MessageType> {
+        match challenge {
+            Some(challenge) => {
+                match challenge {
+                    ChallengeType::MD5HashCash(challenge) => {
+                        let (challenge, answer) = self.handle_md5(challenge, answer);
+                        if challenge.verify(answer) {
+                            // increase score of winning player
+                            return Some(MessageType::boardcast(Message::PublicLeaderBoard(
+                                self.players.get_players(),
+                            )));
+                        }
+                        None
+                    }
+                    ChallengeType::RecoverSecret(challenge) => {
+                        let (challenge, answer) = self.handle_recover_secret(challenge, answer);
+                        if challenge.verify(answer) {
+                            // increase score of winning player
+                            return Some(MessageType::boardcast(Message::PublicLeaderBoard(
+                                self.players.get_players(),
+                            )));
+                        }
+                        None
+                    }
+                }
+            }
+            None => {
+                error!("No challenge to answer");
+                panic!("No challenge to answer, current_challenge is None");
+            }
+        }
+    }
+
+    fn handle_md5(
+        &self,
+        challenge: MD5HashCash,
+        answer: ChallengeAnswer,
+    ) -> (MD5HashCash, MD5HashCashOutput) {
+        match answer {
+            ChallengeAnswer::MD5HashCash(answer) => {
+                return (challenge, answer);
+            }
+            _ => panic!("Wrong challenge type"),
+        }
+    }
+
+    fn handle_recover_secret(
+        &self,
+        challenge: RecoverSecret,
+        answer: ChallengeAnswer,
+    ) -> (RecoverSecret, RecoverSecretOutput) {
+        match answer {
+            ChallengeAnswer::RecoverSecret(answer) => {
+                return (challenge, answer);
+            }
+            _ => panic!("Wrong challenge type"),
+        }
+    }
+}
 
 // #[cfg(test)]
 // mod tests {

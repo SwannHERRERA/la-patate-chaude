@@ -15,6 +15,14 @@ impl Player {
       tcp_stream
     }
   }
+  pub fn send_message(&mut self, message: Message) {
+    let response = serde_json::to_string(&message).unwrap();
+    let response = response.as_bytes();
+    let response_size = response.len() as u32;
+    let response_length_as_bytes = response_size.to_be_bytes();
+    let result = self.tcp_stream.write(&[&response_length_as_bytes, response].concat());
+    trace!("byte write : {:?}, ", result);
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -35,6 +43,10 @@ impl PlayerList {
 
     pub fn get_players(&self) -> Vec<PublicPlayer> {
         self.players.lock().unwrap().iter().map(|p| p.info_public.clone()).collect()
+    }
+
+    pub fn len(&self) -> usize {
+      self.players.lock().unwrap().len()
     }
 
     pub fn has_player_with_name(&self, name: &str) -> bool {

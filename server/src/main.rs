@@ -1,8 +1,10 @@
+use game::Game;
 use server::{create_listener, Server};
 use shared::config;
 
 mod utils;
 mod player;
+mod game;
 mod message_handler;
 mod exchanger;
 mod server;

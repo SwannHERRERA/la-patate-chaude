@@ -13,6 +13,13 @@ pub struct Exchanger {
 }
 
 impl Exchanger {
+    pub fn new(message_handler: MessageHandler, tx: Sender<Message>, game: Game) -> Exchanger {
+        Exchanger {
+            message_handler,
+            tx,
+            game,
+        }
+    }
 
   pub fn new(message_handler: MessageHandler, game: Game, tx: Sender<MessageType>) -> Exchanger {
     Exchanger { message_handler, game, tx }
@@ -91,18 +98,18 @@ impl Exchanger {
     let _size_error = stream.read(&mut message_size);
     let decimal_size = u32::from_be_bytes(message_size);
 
-    let mut bytes_of_message = vec![0; decimal_size as usize];
-    let _size_read = stream.read_exact(&mut bytes_of_message);
-    let message = String::from_utf8_lossy(&bytes_of_message);
-    let message = serde_json::from_str(&message);
-    match message {
-      Ok(m) => m,
-      Err(err) => {
-        warn!("Cannot parse message : {:?}", err);
-        Message::EndOfCommunication
-      },
+        let mut bytes_of_message = vec![0; decimal_size as usize];
+        let _size_read = stream.read_exact(&mut bytes_of_message);
+        let message = String::from_utf8_lossy(&bytes_of_message);
+        let message = serde_json::from_str(&message);
+        match message {
+            Ok(m) => m,
+            Err(err) => {
+                warn!("Cannot parse message : {:?}", err);
+                Message::EndOfCommunication
+            }
+        }
     }
-  }
 
   fn start_round(&self) -> MessageType {
     info!("start round");
@@ -129,5 +136,3 @@ impl Exchanger {
     }
   }
 }
-
-
