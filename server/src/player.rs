@@ -74,8 +74,8 @@ impl PlayerList {
       }
     }
 
-    pub fn disable_player(&mut self, stream: &TcpStream) {
-      let index = self.players.lock().unwrap().iter().position(|p| p.info_public.stream_id == stream.peer_addr().unwrap().to_string());
+    pub fn disable_player(&mut self, client_id: String) {
+      let index = self.players.lock().unwrap().iter().position(|p| p.info_public.stream_id == client_id);
       if let Some(index) = index {
         self.players.lock().unwrap()[index].info_public.is_active = false;
       }

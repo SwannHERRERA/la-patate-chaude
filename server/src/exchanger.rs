@@ -29,7 +29,7 @@ impl Exchanger {
         break;
       }
       self.check_start_round(response.clone());
-      self.check_end_challenge(response);
+      self.check_end_challenge(response, client_id.clone());
     }
 
     let shutdown_result = stream.shutdown(Shutdown::Both);
@@ -38,7 +38,7 @@ impl Exchanger {
     }
   }
 
-  fn check_end_challenge(&mut self, response: MessageType) {
+  fn check_end_challenge(&mut self, response: MessageType, client_id: String) {
     if matches!(response.message, Message::RoundSummary { .. }) {
       trace!("End of challenge");
         let challenge = self.get_new_challenge();
@@ -47,7 +47,7 @@ impl Exchanger {
         if let Some(challenge_result) = self.game.get_last_chain_result() {
           debug!("{:?}", challenge_result);
           match &challenge_result.value {
-            ChallengeValue::Unreachable | ChallengeValue::Timeout => todo!(),// desactivé mon client
+            ChallengeValue::Unreachable | ChallengeValue::Timeout => self.game.players.disable_player(client_id),
             ChallengeValue::BadResult { used_time: _, next_target } | ChallengeValue::Ok { used_time: _, next_target } => {
               let message = Message::Challenge(challenge);
               if let Some(player) = self.game.get_player_by_name(next_target) {
