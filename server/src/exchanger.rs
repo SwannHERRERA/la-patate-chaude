@@ -121,10 +121,21 @@ impl Exchanger {
     MessageType::unicast(message, player.stream_id)
   }
 
-  fn get_new_challenge(&self) -> ChallengeType {
-    match self.game.challenge_type.as_str() {
-      "hashcash" => ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new())),
-      _ => panic!("Unknown challenge type"),
+        match self.game.game_type {
+            GameType::HashCash => {
+                challenge = ChallengeType::MD5HashCash(MD5HashCash(MD5HashCashInput::new()));
+            }
+            GameType::RecoverSecret => {
+                challenge = ChallengeType::RecoverSecret(RecoverSecret(generate_challenge()));
+            }
+
+            GameType::MonstrousMaze => {
+                panic!("MonstrousMaze not implemented yet");
+            }
+        }
+
+        let message = Message::Challenge(challenge);
+        MessageType::unicast(message)
     }
   }
 }
