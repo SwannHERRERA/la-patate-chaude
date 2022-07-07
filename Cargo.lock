@@ -125,6 +125,7 @@ dependencies = [
  "hashcash",
  "log",
  "num_cpus",
+ "pretty_env_logger",
  "rand",
  "serde",
  "serde_json",

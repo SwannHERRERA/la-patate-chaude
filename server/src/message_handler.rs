@@ -128,6 +128,7 @@ impl MessageHandler {
                         }
                         None
                     }
+                    ChallengeType::MonstrousMaze(_) => {None}
                 }
             }
             None => {

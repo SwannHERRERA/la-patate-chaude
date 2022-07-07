@@ -1,18 +1,21 @@
-use rand::{Rng, thread_rng};
+use rand::seq::IteratorRandom;
 
 use shared::message::PublicLeaderBoard;
 
 #[derive(Debug, Clone)]
 pub struct RandomTargetStrategy {
-    pub(crate) current_name: String}
+    pub(crate) current_name: String,
+}
 
 #[derive(Debug, Clone)]
 pub struct TopTargetStrategy {
-    pub(crate) current_name: String}
+    pub(crate) current_name: String,
+}
 
 #[derive(Debug, Clone)]
 pub struct BottomTargetStrategy {
-    pub(crate) current_name: String}
+    pub(crate) current_name: String,
+}
 
 #[derive(Debug, Clone)]
 pub enum TargetStrategyType {
@@ -23,54 +26,54 @@ pub enum TargetStrategyType {
 
 pub trait TargetStrategy {
     fn new(current_name: String) -> Self;
-    fn next_target(self, public_leader_board: PublicLeaderBoard) -> String;
+    fn next_target(self, public_leader_board: &PublicLeaderBoard) -> String;
 }
 
 impl TargetStrategy for TopTargetStrategy {
     fn new(current_name: String) -> Self {
-        TopTargetStrategy {current_name}
+        TopTargetStrategy { current_name }
     }
 
-    fn next_target(self, mut public_leader_board: PublicLeaderBoard) -> String {
-        public_leader_board.sort_by(|a, b| b.score.cmp(&a.score));
-        for player in public_leader_board {
-            if player.name != self.current_name && player.is_active {
-                return player.name.clone();
-            }
-        }
-        panic!("No more players in the game");
+    fn next_target(self, public_leader_board: &PublicLeaderBoard) -> String {
+        return public_leader_board
+            .iter()
+            .filter(|player| player.name != self.current_name && player.is_active)
+            .max_by(|a, b| a.score.cmp(&b.score))
+            .expect("No more players in the game")
+            .name
+            .clone();
     }
 }
 
 impl TargetStrategy for BottomTargetStrategy {
     fn new(current_name: String) -> Self {
-        BottomTargetStrategy {current_name}
+        BottomTargetStrategy { current_name }
     }
 
-    fn next_target(self, mut public_leader_board: PublicLeaderBoard) -> String {
-        public_leader_board.sort_by(|a, b| a.score.cmp(&b.score));
-        for player in public_leader_board {
-            if player.name != self.current_name && player.is_active {
-                return player.name.clone();
-            }
-        }
-        panic!("No more players in the game");
+    fn next_target(self, public_leader_board: &PublicLeaderBoard) -> String {
+        return public_leader_board
+            .iter()
+            .filter(|player| player.name != self.current_name && player.is_active)
+            .min_by(|a, b| a.score.cmp(&b.score))
+            .expect("No more players in the game")
+            .name
+            .clone();
     }
 }
 
 impl TargetStrategy for RandomTargetStrategy {
     fn new(current_name: String) -> Self {
-        RandomTargetStrategy {current_name}
+        RandomTargetStrategy { current_name }
     }
 
-    fn next_target(self, mut public_leader_board: PublicLeaderBoard) -> String {
-        let index = public_leader_board.iter().position(|r| r.name.clone() == self.current_name).unwrap();
-        public_leader_board.remove(index);
-        let mut rng = thread_rng();
-        if public_leader_board.len() == 0 {
-            panic!("No more players in the game");
-        }
-        let target_index = rng.gen_range(0..public_leader_board.len());
-        public_leader_board.get(target_index as usize).unwrap().name.to_string()
+    fn next_target(self, public_leader_board: &PublicLeaderBoard) -> String {
+        let mut rng = rand::thread_rng();
+        return public_leader_board
+            .iter()
+            .filter(|player| player.name != self.current_name && player.is_active)
+            .choose(&mut rng)
+            .expect("No more players in the game")
+            .name
+            .clone();
     }
 }

@@ -1,15 +1,14 @@
-use std::collections::{HashSet};
-use std::net::{Shutdown, SocketAddr};
-use std::sync::atomic::Ordering;
-use std::sync::mpsc;
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc::Sender;
-use std::thread::JoinHandle;
 use std::{
     io::{Read, Write},
     net::TcpStream,
     thread,
 };
+use std::collections::HashSet;
+use std::net::{Shutdown, SocketAddr};
+use std::sync::atomic::Ordering;
+use std::sync::mpsc;
+use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
 
 use clap::Parser;
 use log::{debug, error, trace, warn};
@@ -19,8 +18,8 @@ use rand::Rng;
 use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType, DictionaryChallenge};
 use shared::config::LOG_LEVEL;
-use shared::message::Message::ChallengeResult;
 use shared::message::{Message, PublicLeaderBoard};
+use shared::message::Message::ChallengeResult;
 use shared::subscribe::SubscribeResult;
 use utils::file_utils::read_file_macro;
 use utils::string_utils::generate_dictionary_hashmap;
@@ -70,6 +69,7 @@ fn main() {
     THREAD_COUNT.store(args.thread_count, Ordering::Relaxed);
     THREAD_SEED_SLICE.store(args.thread_seed_slice, Ordering::Relaxed);
     std::env::set_var("RUST_LOG", LOG_LEVEL);
+    pretty_env_logger::init();
     match TcpStream::connect(format!("{}:{}", args.ip, args.port).as_str()) {
         Ok(stream) => {
             let client = Client::new(&args);
@@ -102,7 +102,7 @@ fn solve_challenge(
                 } else {
                     ChallengeAnswer::RecoverSecret(challenge.solve())
                 }
-            }
+            };
         }
         ChallengeType::MonstrousMaze(challenge) => {
             ChallengeAnswer::MonstrousMaze(challenge.solve())
@@ -125,11 +125,11 @@ impl Client {
         let dictionary_hashmap;
         let username = args.username.clone();
         if args.load_dictionary {
-            println!("Reading dictionary file...");
+            debug!("Reading dictionary file...");
             let dictionary = read_file_macro();
-            println!("Generating hashmap...");
+            debug!("Generating hashmap...");
             dictionary_hashmap = Some(generate_dictionary_hashmap(&dictionary));
-            println!("Done !");
+            debug!("Done !");
         } else {
             dictionary_hashmap = None;
         }
@@ -160,57 +160,81 @@ impl Client {
 
     fn start_threads(self, stream: TcpStream) {
         let (thread_writer, thread_reader) = mpsc::channel();
-        let stream_cpy = stream.try_clone().unwrap();
+
+        let stream_cpy = stream.try_clone();
         self.start_message_sender(stream, thread_reader);
-        thread_writer.send(Message::Hello).unwrap();
-        self.start_message_listener(stream_cpy, thread_writer.clone());
+
+        thread_writer.send(Message::Hello).expect("Could not send hello message");
+
+        match stream_cpy {
+            Ok(stream) => { self.start_message_listener(stream, thread_writer); }
+            Err(err) => {
+                panic!("Could not clone stream : {}", err);
+            }
+        }
     }
 
     fn start_message_listener(
         mut self,
         mut stream: TcpStream,
         thread_writer: Sender<Message>,
-    ) -> JoinHandle<()> {
+    ) {
+        let mut buf_size = [0; 4];
+
         loop {
-            let mut buf_size = [0; 4];
-            stream.read(&mut buf_size).unwrap();
+            stream.read(&mut buf_size).expect("Could not read stream message size");
+
             let res_size = u32::from_be_bytes(buf_size);
             if res_size == 0 {
+                debug!("Received 0 size message");
                 continue;
             }
 
             let mut buf = vec![0; res_size as usize];
-            stream.read(&mut buf).unwrap();
+
+            stream.read(&mut buf).expect("Could not read stream message");
+
             let string_receive = String::from_utf8_lossy(&buf);
 
             match serde_json::from_str(&string_receive) {
-                Ok(message) => self.dispatch_messages(message, &thread_writer),
+                Ok(message) => {
+                    let message = self.dispatch_messages(message, &thread_writer);
+                    match message {
+                        Message::EndOfGame { .. } => {
+                            debug!("Shutting down reader stream");
+                            stream.shutdown(Shutdown::Both).expect("shutdown call failed");
+                            break;
+                        }
+                        _ => {}
+                    }
+                },
                 Err(err) => error!("Error while parsing message {:?}", err),
             }
         }
     }
 
-    fn dispatch_messages(&mut self, message: Message, thread_writer: &Sender<Message>) {
+    fn dispatch_messages(&mut self, message: Message, thread_writer: &Sender<Message>) -> Message {
         debug!("Dispatching: {:?}", message);
-        match message {
+        match message.clone() {
             Message::Welcome { .. } => {
                 let answer = Message::Subscribe {
                     name: self.username.clone(),
                 };
-                thread_writer.send(answer).unwrap();
+                thread_writer.send(answer).expect("Could not send subscribe message");
             }
             Message::Challenge(challenge) => {
                 let challenge_answer =
                     solve_challenge(challenge, &self.dictionary_hashmap, &self.cheat);
+
                 let next_target = match self.next_target_strategy.clone() {
                     TargetStrategyType::RandomTargetStrategy(strategy) => {
-                        strategy.next_target(self.public_leader_board.clone())
+                        strategy.next_target(&self.public_leader_board)
                     }
                     TargetStrategyType::TopTargetStrategy(strategy) => {
-                        strategy.next_target(self.public_leader_board.clone())
+                        strategy.next_target(&self.public_leader_board)
                     }
                     TargetStrategyType::BottomTargetStrategy(strategy) => {
-                        strategy.next_target(self.public_leader_board.clone())
+                        strategy.next_target(&self.public_leader_board)
                     }
                 };
                 debug!("Selected next target: {:?}", next_target);
@@ -219,7 +243,7 @@ impl Client {
                         answer: challenge_answer,
                         next_target: next_target.to_string(),
                     })
-                    .unwrap();
+                    .expect("Could not send challenge result message");
             }
             Message::PublicLeaderBoard(leader_board) => {
                 self.public_leader_board = leader_board;
@@ -231,14 +255,15 @@ impl Client {
                 }
             }
             Message::RoundSummary { challenge: _, chain: _ } => {}
-        Message::EndOfGame { leader_board } => {
+            Message::EndOfGame { leader_board } => {
                 trace!("{:?}", leader_board);
                 thread_writer
                     .send(Message::EndOfGame { leader_board })
-                    .unwrap();
+                    .expect("Could not send end of game message");
             }
-            _ => warn!("Unhandled message {:?}", message),
+            _ => error!("Unhandled message {:?}", message),
         }
+        message
     }
 
     fn start_message_sender(&self, mut stream: TcpStream, thread_reader: Receiver<Message>) {
@@ -246,10 +271,8 @@ impl Client {
             for message in thread_reader {
                 match message {
                     Message::EndOfGame { .. } => {
-                        debug!("Shutting down stream");
-                        stream
-                            .shutdown(Shutdown::Both)
-                            .expect("shutdown call failed");
+                        debug!("Shutting down writer stream");
+                        break;
                     }
                     _ => {
                         if let Ok(message) = serde_json::to_string(&message) {
@@ -259,6 +282,8 @@ impl Client {
                             let result =
                                 stream.write(&[&message_length_as_bytes, bytes_message].concat());
                             debug!("Write result : {:?}, message: {}", result, message);
+                        }else {
+                            error!("Could not serialize message");
                         }
                     }
                 }

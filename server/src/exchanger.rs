@@ -121,6 +121,10 @@ impl Exchanger {
             GameType::RecoverSecret => {
                 challenge = ChallengeType::RecoverSecret(RecoverSecret(generate_challenge()));
             }
+
+            GameType::MonstrousMaze => {
+                panic!("MonstrousMaze not implemented yet");
+            }
         }
 
         let message = Message::Challenge(challenge);
