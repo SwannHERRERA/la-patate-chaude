@@ -6,6 +6,8 @@ use hashcash::{
     dto::{MD5HashCash, MD5HashCashInput, MD5HashCashOutput},
     hashcash::Hashcash,
 };
+use monstrous_maze::challenge_resolve::MonstrousMazeResolver;
+use monstrous_maze::models::{MonstrousMaze, MonstrousMazeInput, MonstrousMazeOutput};
 use recover_secret::challenge_generator::validate_challenge;
 use recover_secret::challenge_resolve::{
     solve_secret_sentence_challenge, solve_secret_sentence_challenge_cheat,
@@ -90,10 +92,32 @@ impl Challenge for RecoverSecret {
     }
 }
 
+impl Challenge for MonstrousMaze{
+    type Input = MonstrousMazeInput;
+    type Output = MonstrousMazeOutput;
+
+    fn name() -> String {
+        "MonstrousMaze".to_string()
+    }
+
+    fn new(input: Self::Input) -> Self {
+        MonstrousMaze(input)
+    }
+
+    fn solve(&self) -> Self::Output {
+        MonstrousMazeResolver::resolve_monstrous_maze_challenge(&self.0)
+    }
+
+    fn verify(&self, answer: Self::Output) -> bool {
+        todo!()
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ChallengeAnswer {
     MD5HashCash(MD5HashCashOutput),
     RecoverSecret(RecoverSecretOutput),
+    MonstrousMaze(MonstrousMazeOutput),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -114,10 +138,12 @@ pub struct ReportedChallengeResult {
 pub enum ChallengeType {
     MD5HashCash(MD5HashCash),
     RecoverSecret(RecoverSecret),
+    MonstrousMaze(MonstrousMaze),
 }
 
 #[derive(Debug, Clone)]
 pub enum GameType {
     HashCash,
     RecoverSecret,
+    MonstrousMaze,
 }
