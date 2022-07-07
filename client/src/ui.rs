@@ -82,7 +82,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, data: ClientData) {
 
 
     let paragraph = Paragraph::new(format!("La patate chaude client {}", &data.username))
-        .style(Style::default().fg(Color::Black))
+        .style(Style::default().fg(Color::LightMagenta))
         .block(Block::default()
             .borders(Borders::ALL))
         .alignment(Alignment::Center)
