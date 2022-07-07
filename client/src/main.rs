@@ -20,7 +20,7 @@ use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType, DictionaryCha
 use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
 use shared::subscribe::SubscribeResult;
-use utils::file_utils::read_file_macro;
+use utils::file_utils::read_dic_file_macro;
 use utils::string_utils::generate_dictionary_hashmap;
 
 use crate::strategies::{
@@ -129,7 +129,7 @@ impl Client {
         let username = args.username.clone();
         if args.load_dictionary {
             debug!("Reading dictionary file...");
-            let dictionary = read_file_macro();
+            let dictionary = read_dic_file_macro();
             debug!("Generating hashmap...");
             dictionary_hashmap = Some(generate_dictionary_hashmap(&dictionary));
             debug!("Done !");
