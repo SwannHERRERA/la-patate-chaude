@@ -1,9 +1,19 @@
-use std::sync::{Mutex, Arc};
+use std::{sync::{Mutex, Arc}, time::{Duration, Instant}};
 
 use log::trace;
 use shared::{challenge::{ChallengeType, ReportedChallengeResult}, public_player::PublicPlayer};
 
 use crate::player::{PlayerList, Player};
+
+
+pub type PlayerId = String;
+
+#[derive(Debug)]
+pub struct Round {
+  pub solvers: Vec<PlayerId>,
+  pub start: Instant,
+  pub duration: Duration,
+}
 
 #[derive(Debug, Clone)]
 pub struct Game {
@@ -11,6 +21,8 @@ pub struct Game {
   pub challenge: Arc<Mutex<Option<ChallengeType>>>,
   pub challenge_type: String,
   pub chain: Arc<Mutex<Vec<ReportedChallengeResult>>>,
+  pub rounds: Arc<Mutex<Vec<Round>>>,
+  pub current_round: Arc<Mutex<Option<Round>>>,
 }
 
 impl Game {
@@ -18,11 +30,15 @@ impl Game {
     let players = PlayerList::new();
     let challenge = Arc::new(Mutex::new(None));
     let chain = Arc::new(Mutex::new(Vec::new()));
+    let rounds = Arc::new(Mutex::new(Vec::new()));
+    let current_round = Arc::new(Mutex::new(None));
     Game {
       players,
       challenge,
       challenge_type,
-      chain
+      chain,
+      rounds,
+      current_round,
     }
   }
   pub fn add_player(&mut self, player: Player) {
