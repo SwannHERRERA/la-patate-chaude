@@ -1,17 +1,13 @@
-use std::{
-    io::{Read, Write},
-    net::TcpStream,
-    thread,
-};
+use std::{io::{Read, Write}, net::TcpStream, thread};
 use std::collections::HashSet;
-use std::net::{Shutdown, SocketAddr};
+use std::net::Shutdown;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 
 use clap::Parser;
-use log::{debug, error, trace, warn};
+use log::{debug, error, trace};
 use rand;
 use rand::Rng;
 
@@ -28,8 +24,10 @@ use crate::strategies::{
     BottomTargetStrategy, RandomTargetStrategy, TargetStrategy, TargetStrategyType,
     TopTargetStrategy,
 };
+use crate::ui::{ClientData, start_ui_display};
 
 mod strategies;
+mod ui;
 
 /// Client configuration
 #[derive(Parser, Default, Debug)]
@@ -62,6 +60,10 @@ pub struct ClientArgs {
     /// Enable cheat mode for recover secret challenge
     #[clap(long, value_parser, default_value_t = false)]
     pub cheat: bool,
+
+    /// Enable client ui display
+    #[clap(long, value_parser, default_value_t = false)]
+    pub display_gui: bool,
 }
 
 fn main() {
@@ -72,7 +74,12 @@ fn main() {
     pretty_env_logger::init();
     match TcpStream::connect(format!("{}:{}", args.ip, args.port).as_str()) {
         Ok(stream) => {
-            let client = Client::new(&args);
+            let (ui_writer, ui_reader) = mpsc::channel();
+
+            let client = Client::new(&args, ui_writer);
+            if args.display_gui {
+                start_ui_display(ui_reader);
+            }
             client.start_threads(stream);
         }
         Err(_) => panic!(
@@ -116,10 +123,12 @@ pub struct Client {
     next_target_strategy: TargetStrategyType,
     dictionary_hashmap: Option<HashSet<String>>,
     cheat: bool,
+    ui_enabled: bool,
+    ui_writer: Sender<ClientData>,
 }
 
 impl Client {
-    fn new(args: &ClientArgs) -> Client {
+    pub fn new(args: &ClientArgs, ui_writer: Sender<ClientData>) -> Client {
         let mut rng = rand::thread_rng();
         // Load dictionary file
         let dictionary_hashmap;
@@ -149,29 +158,27 @@ impl Client {
             }
         };
         debug!("Selected strategy : {:?}", next_target_strategy);
+        ui_writer.send(ClientData { public_leader_board: vec![], username: username.clone() })
+            .expect("Could not send public leader board message");
         Client {
             public_leader_board: vec![],
             username,
             next_target_strategy,
             dictionary_hashmap,
             cheat: args.cheat,
+            ui_enabled: args.display_gui,
+            ui_writer,
         }
     }
 
-    fn start_threads(self, stream: TcpStream) {
+    pub fn start_threads(self, stream: TcpStream) {
         let (thread_writer, thread_reader) = mpsc::channel();
 
-        let stream_cpy = stream.try_clone();
+        let stream_cpy = stream.try_clone().expect("Could not clone stream");
         self.start_message_sender(stream, thread_reader);
 
         thread_writer.send(Message::Hello).expect("Could not send hello message");
-
-        match stream_cpy {
-            Ok(stream) => { self.start_message_listener(stream, thread_writer); }
-            Err(err) => {
-                panic!("Could not clone stream : {}", err);
-            }
-        }
+        self.start_message_listener(stream_cpy, thread_writer);
     }
 
     fn start_message_listener(
@@ -247,6 +254,10 @@ impl Client {
             }
             Message::PublicLeaderBoard(leader_board) => {
                 self.public_leader_board = leader_board;
+                if self.ui_enabled {
+                    self.ui_writer.send(ClientData { public_leader_board: self.public_leader_board.clone(), username: self.username.clone() })
+                        .expect("Could not send public leader board message");
+                }
             }
             Message::SubscribeResult(result) => match result {
                 SubscribeResult::Ok => {}
