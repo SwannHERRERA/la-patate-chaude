@@ -8,7 +8,7 @@ use crate::player::{PlayerList, Player};
 
 pub type PlayerName = String;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Round {
   pub solvers: HashSet<PlayerName>,
   pub start: Instant,
@@ -121,6 +121,12 @@ impl Game {
   pub fn start_round(&self) {
     let current_round = Round::new(config::ROUND_DURATION);
     self.current_round.lock().unwrap().replace(current_round);
+  }
+
+  pub fn push_current_round(&mut self) {
+    let mut rounds = self.rounds.lock().unwrap();
+    let current_round = self.current_round.lock().unwrap().clone();
+    rounds.push(current_round.expect("No current round to push"));
   }
 }
 // match challenge_type.as_str() {

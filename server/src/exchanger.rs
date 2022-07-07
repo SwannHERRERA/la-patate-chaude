@@ -39,13 +39,24 @@ impl Exchanger {
   }
 
   fn check_end_challenge(&mut self, response: MessageType, client_id: String) {
+    let mut is_end_of_round = false;
     if matches!(response.message, Message::RoundSummary { .. }) {
       let mut current_round = self.game.current_round.lock().unwrap();
       if let Some(current_round) = &mut *current_round {
-        let acctual_player = current_round.acctual_player.clone().expect("No acctual player when challenge end");
-        self.game.update_score(acctual_player.as_str());
+        if current_round.start.elapsed() > current_round.duration {
+          let acctual_player = current_round.acctual_player.clone().expect("No acctual player when challenge end");
+          self.game.update_score(acctual_player.as_str());
+          info!("current round: {:?}", current_round);
+          is_end_of_round = true;
+        }
       }
       drop(current_round);
+      if is_end_of_round {
+        self.game.push_current_round();
+        let message = self.start_round();
+        self.tx.send(message).unwrap();
+        return;
+      }
 
       trace!("End of challenge");
         let challenge = self.get_new_challenge();
