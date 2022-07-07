@@ -71,7 +71,8 @@ impl Exchanger {
                         .clone()
                         .expect("No actual player when challenge end");
                     self.game.update_score(actual_player.as_str());
-                    info!("current round: {:?}", current_round);
+
+                    self.show_leaderboard();
                     is_end_of_round = true;
                 }
             }
@@ -113,6 +114,16 @@ impl Exchanger {
                 }
             }
         }
+    }
+
+    fn show_leaderboard(&self) {
+        print!("\x1B[2J\x1B[1;1H");
+        println!("Leaderboard :");
+        let mut player = self.game.players.get_players();
+        player.sort_by(|a, b| b.name.cmp(&a.name));
+        player.iter().for_each(|player| {
+            println!("{:?}", player);
+        });
     }
 
     fn check_start_round(&mut self, response: MessageType) {
