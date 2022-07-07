@@ -1,5 +1,11 @@
 # Projet Rust: _la Patate Chaude_ <br> Architecture des Logiciels - 4<sup>ème</sup> année - ESGI
 
+---
+
+**Flash news**: la [FAQ](FAQ.md)
+
+---
+
 Vous connaissez peut-être [l'expression](https://fr.wiktionary.org/wiki/patate_chaude)
 ou [le jeu](https://www.momes.net/jeux/jeux-exterieur/courses-relais-rapidite/patate-chaude-842114) de la _patate
 chaude_.
@@ -94,7 +100,7 @@ trait Challenge {
     /// Résout le challenge
     fn solve(&self) -> Self::Output;
     /// Vérifie qu'une sortie est valide pour le challenge
-    fn verify(&self, answer: Self::Output) -> bool;
+    fn verify(&self, answer: &Self::Output) -> bool;
 }
 ```
 
@@ -211,6 +217,10 @@ Tous les messages sont de la forme:
 | `ChallengeResult`   | `result: ChallengeAnswer`<br/>`next_target: String`           | `{"ChallengeResult":{"answer":{"MD5HashCash":{"seed":12345678,"hashcode":"68B329DA9893E34099C7D8AD5CB9C940"}},"next_target":"dark_salad"}}`                                                                                                                    |
 | `RoundSummary`      | `challenge: String`<br/>`chain: Vec<ReportedChallengeResult>` | `{"RoundSummary":{"challenge":"MD5HashCash","chain":[{"name":"free_patato","value":{"Ok":{"used_time":0.1,"next_target":"dark_salad"}}},{"name":"dark_salad","value":"Unreachable"}]}}`                                                                        |
 | `EndOfGame`         | `leader_board: PublicLeaderBoard`                             | `{"EndOfGame":{"leader_board":[{"name":"free_patato","stream_id":"127.0.0.1","score":10,"steps":20,"is_active":true,"total_used_time":1.234},{"name":"dark_salad","stream_id":"127.0.0.1","score":6,"steps":200,"is_active":true,"total_used_time":0.1234}]}}` |
+
+### Séquencement des messages
+
+![Séquencement des messages](images/Sequence.drawio.svg "Séquencement des messages")
 
 ### Les types additionnels:
 

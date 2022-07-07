@@ -1,2 +1,2 @@
 [workspace]
-members = ["server", "client", "shared"]
+members = ["server", "client", "shared", "hashcash", "recover_secret", "monstrous_maze", "utils"]
