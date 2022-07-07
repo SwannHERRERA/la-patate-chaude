@@ -18,7 +18,7 @@ use rand::Rng;
 
 use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType, DictionaryChallenge};
-use shared::config::{IP, LOG_LEVEL, PORT};
+use shared::config::LOG_LEVEL;
 use shared::message::Message::ChallengeResult;
 use shared::message::{Message, PublicLeaderBoard};
 use shared::subscribe::SubscribeResult;
