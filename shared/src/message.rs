@@ -37,7 +37,7 @@ pub enum Message {
 #[derive(Debug, Clone)]
 pub enum ResponseType {
     Broadcast,
-    Unicast,
+    Unicast { client_id: String },
 }
 
 #[derive(Debug, Clone)]
@@ -50,8 +50,8 @@ impl MessageType {
     pub fn boardcast(message: Message) -> MessageType {
         MessageType { message, message_type: ResponseType::Broadcast }
     }
-    pub fn unicast(message: Message) -> MessageType {
-        MessageType { message, message_type: ResponseType::Unicast }
+    pub fn unicast(message: Message, client_id: String) -> MessageType {
+        MessageType { message, message_type: ResponseType::Unicast { client_id } }
     }
 }
 

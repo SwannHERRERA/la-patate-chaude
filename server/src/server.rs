@@ -1,40 +1,45 @@
 use crate::exchanger::Exchanger;
 use crate::game::Game;
-use std::io::Write;
 use crate::message_handler::MessageHandler;
+use crate::player::Player;
+use crate::utils::send_response;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
-use log::{info, trace, debug};
+use log::{info, debug, warn, trace};
 use shared::config::{PORT, IP};
-use shared::message::Message;
+use shared::message::{MessageType, ResponseType};
+use shared::public_player::PublicPlayer;
 
 pub struct Server {
   listener: TcpListener,
-  game: Game,
+  pub game: Game,
 }
 
 impl Server {
-  pub fn new(listener: TcpListener, game: Game) -> Server {
+  pub fn new(listener: TcpListener, game: Game ) -> Server {
     Server { listener, game }
   }
 
   pub fn listen(&mut self) {
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
-    let (tx, rx) = mpsc::channel::<Message>();
+    let (tx, rx) = mpsc::channel::<MessageType>();
+
     handles.push(self.listen_broadcast(rx));
 
     for stream in self.listener.incoming() {
       let stream = stream.unwrap();
+      let stream_id = stream.peer_addr().unwrap().to_string();
       debug!("{:?}", stream);
       let stream_copy = stream.try_clone().unwrap();
-      info!("players {:?}", self.game.players.get_players());
-      let message_handler = MessageHandler::new_from_game(&self.game);
+      self.game.add_player(Player::new(PublicPlayer::new(stream_id.clone(), stream_id), stream));
+      info!("players {:?}", self.game.get_players());
+      let message_handler = MessageHandler::new(self.game.clone());
       let tx = tx.clone();
-      let game = self.game.clone();
+      let game_cpy = self.game.clone();
       let handle = thread::spawn(move || {
-        let mut exchanger = Exchanger::new(message_handler, tx, game);
-        exchanger.hold_communication(stream_copy);
+        let mut exchanger = Exchanger::new(message_handler, game_cpy, tx);
+        exchanger.hold_communcation(stream_copy);
       });
       handles.push(handle);
     }
@@ -43,31 +48,42 @@ impl Server {
     }
   }
 
-  fn listen_broadcast(&self, rx: mpsc::Receiver<Message>) -> JoinHandle<()> {
-    let players = self.game.players.players.clone();
-    info!("players {:?}", self.game.players.get_players());
-    let broadcast_reciever = thread::spawn(move || loop {
+  fn listen_broadcast(&self, rx: mpsc::Receiver<MessageType>) -> JoinHandle<()> {
+    let mut players = self.game.players.clone();
+    info!("players {:?}", self.game.get_players());
+    thread::spawn(move || loop {
       match rx.recv() {
         Ok(msg) => {
-          let mut players = players.lock().unwrap();
-          info!("rx recieve : {:?}", msg);
-          for player in players.iter_mut() {
-            let response = serde_json::to_string(&msg).unwrap();
-            let response = response.as_bytes();
-            let response_size = response.len() as u32;
-            let response_length_as_bytes = response_size.to_be_bytes();
-            let result = player.tcp_stream.write(&[&response_length_as_bytes, response].concat());
-
-            trace!("byte write : {:?}, ", result);
-          }
+          info!("Sending : {:?}", &msg);
+          match msg.message_type {
+            ResponseType::Broadcast => {
+              let mut players = players.players.lock().unwrap();
+              for player in players.iter_mut().filter(|p| p.info_public.is_active) {
+                debug!("broadcast to {:?}", &player.info_public.name);
+                send_response(msg.message.clone(), &player.tcp_stream);
+              }
+            }
+            ResponseType::Unicast { client_id } => {
+              trace!("unicast to {:?}", &client_id);
+              let player = players.get_and_remove_player_by_stream_id(client_id.clone());
+              debug!("players {:?}", players);
+              match player {
+                Some(player) => {
+                  send_response(msg.message, &player.tcp_stream);
+                  players.add_player(player);
+                  debug!("players {:?}", players);
+                }
+                None => warn!("player {} not found", client_id),
+              }
+            }
+          };
         }
         Err(err) => {
           info!("rx recieve error : {:?}", err);
           break;
         }
       }
-    });
-    broadcast_reciever
+    })
   }
 }
 

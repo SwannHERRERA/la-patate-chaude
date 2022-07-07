@@ -108,7 +108,7 @@ impl Challenge for MonstrousMaze{
         MonstrousMazeResolver::resolve_monstrous_maze_challenge(&self.0)
     }
 
-    fn verify(&self, answer: Self::Output) -> bool {
+    fn verify(&self, _answer: Self::Output) -> bool {
         todo!()
     }
 }
@@ -146,4 +146,12 @@ pub enum GameType {
     HashCash,
     RecoverSecret,
     MonstrousMaze,
+}
+
+pub fn get_name_of_challenge_type(challenge_type: ChallengeType) -> String {
+    match challenge_type {
+        ChallengeType::MD5HashCash(_) => MD5HashCash::name(),
+        ChallengeType::RecoverSecret(_) => todo!(),
+        ChallengeType::MonstrousMaze(_) => todo!(),
+    }
 }
