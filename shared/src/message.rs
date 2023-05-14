@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    challenge::{ChallengeAnswer, ChallengeType, ReportedChallengeResult},
     public_player::PublicPlayer,
-    challenge::{ChallengeAnswer, ReportedChallengeResult, ChallengeType}, subscribe::SubscribeResult,
+    subscribe::SubscribeResult,
 };
 
 pub type PublicLeaderBoard = Vec<PublicPlayer>;
@@ -48,10 +49,16 @@ pub struct MessageType {
 
 impl MessageType {
     pub fn boardcast(message: Message) -> MessageType {
-        MessageType { message, message_type: ResponseType::Broadcast }
+        MessageType {
+            message,
+            message_type: ResponseType::Broadcast,
+        }
     }
     pub fn unicast(message: Message, client_id: String) -> MessageType {
-        MessageType { message, message_type: ResponseType::Unicast { client_id } }
+        MessageType {
+            message,
+            message_type: ResponseType::Unicast { client_id },
+        }
     }
 }
 
