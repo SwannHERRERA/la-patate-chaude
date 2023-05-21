@@ -1,6 +1,6 @@
-use std::time::Instant;
 use monstrous_maze::challenge_resolve::MonstrousMazeResolver;
 use monstrous_maze::models::MonstrousMazeInput;
+use std::time::Instant;
 
 fn main() {
     pretty_env_logger::init();

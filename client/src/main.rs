@@ -1,10 +1,14 @@
-use std::{io::{Read, Write}, net::TcpStream, thread};
 use std::collections::HashSet;
 use std::net::Shutdown;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
+use std::{
+    io::{Read, Write},
+    net::TcpStream,
+    thread,
+};
 
 use clap::Parser;
 use log::{debug, error, trace};
@@ -13,8 +17,8 @@ use rand::Rng;
 
 use hashcash::hashcash::{THREAD_COUNT, THREAD_SEED_SLICE};
 use shared::challenge::{Challenge, ChallengeAnswer, ChallengeType, DictionaryChallenge};
-use shared::message::{Message, PublicLeaderBoard};
 use shared::message::Message::ChallengeResult;
+use shared::message::{Message, PublicLeaderBoard};
 use shared::subscribe::SubscribeResult;
 use utils::file_utils::read_dic_file_macro;
 use utils::string_utils::generate_dictionary_hashmap;
@@ -23,7 +27,7 @@ use crate::strategies::{
     BottomTargetStrategy, RandomTargetStrategy, TargetStrategy, TargetStrategyType,
     TopTargetStrategy,
 };
-use crate::ui::{ClientData, start_ui_display};
+use crate::ui::{start_ui_display, ClientData};
 
 mod strategies;
 mod ui;
@@ -161,7 +165,11 @@ impl Client {
             }
         };
         debug!("Selected strategy : {:?}", next_target_strategy);
-        ui_writer.send(ClientData { public_leader_board: vec![], username: username.clone() })
+        ui_writer
+            .send(ClientData {
+                public_leader_board: vec![],
+                username: username.clone(),
+            })
             .expect("Could not send public leader board message");
         Client {
             public_leader_board: vec![],
@@ -180,19 +188,19 @@ impl Client {
         let stream_cpy = stream.try_clone().expect("Could not clone stream");
         self.start_message_sender(stream, thread_reader);
 
-        thread_writer.send(Message::Hello).expect("Could not send hello message");
+        thread_writer
+            .send(Message::Hello)
+            .expect("Could not send hello message");
         self.start_message_listener(stream_cpy, thread_writer);
     }
 
-    fn start_message_listener(
-        mut self,
-        mut stream: TcpStream,
-        thread_writer: Sender<Message>,
-    ) {
+    fn start_message_listener(mut self, mut stream: TcpStream, thread_writer: Sender<Message>) {
         let mut buf_size = [0; 4];
 
         loop {
-            stream.read(&mut buf_size).expect("Could not read stream message size");
+            stream
+                .read(&mut buf_size)
+                .expect("Could not read stream message size");
 
             let res_size = u32::from_be_bytes(buf_size);
             if res_size == 0 {
@@ -202,7 +210,9 @@ impl Client {
 
             let mut buf = vec![0; res_size as usize];
 
-            stream.read(&mut buf).expect("Could not read stream message");
+            stream
+                .read(&mut buf)
+                .expect("Could not read stream message");
 
             let string_receive = String::from_utf8_lossy(&buf);
 
@@ -212,12 +222,14 @@ impl Client {
                     match message {
                         Message::EndOfGame { .. } => {
                             debug!("Shutting down reader stream");
-                            stream.shutdown(Shutdown::Both).expect("shutdown call failed");
+                            stream
+                                .shutdown(Shutdown::Both)
+                                .expect("shutdown call failed");
                             break;
                         }
                         _ => {}
                     }
-                },
+                }
                 Err(err) => error!("Error while parsing message {:?}", err),
             }
         }
@@ -230,7 +242,9 @@ impl Client {
                 let answer = Message::Subscribe {
                     name: self.username.clone(),
                 };
-                thread_writer.send(answer).expect("Could not send subscribe message");
+                thread_writer
+                    .send(answer)
+                    .expect("Could not send subscribe message");
             }
             Message::Challenge(challenge) => {
                 let challenge_answer =
@@ -258,7 +272,11 @@ impl Client {
             Message::PublicLeaderBoard(leader_board) => {
                 self.public_leader_board = leader_board;
                 if self.ui_enabled {
-                    self.ui_writer.send(ClientData { public_leader_board: self.public_leader_board.clone(), username: self.username.clone() })
+                    self.ui_writer
+                        .send(ClientData {
+                            public_leader_board: self.public_leader_board.clone(),
+                            username: self.username.clone(),
+                        })
                         .expect("Could not send public leader board message");
                 }
             }
@@ -267,8 +285,11 @@ impl Client {
                 SubscribeResult::Err(err) => {
                     panic!("{:?}", err);
                 }
-            }
-            Message::RoundSummary { challenge: _, chain: _ } => {}
+            },
+            Message::RoundSummary {
+                challenge: _,
+                chain: _,
+            } => {}
             Message::EndOfGame { leader_board } => {
                 trace!("{:?}", leader_board);
                 thread_writer
@@ -296,7 +317,7 @@ impl Client {
                             let result =
                                 stream.write(&[&message_length_as_bytes, bytes_message].concat());
                             debug!("Write result : {:?}, message: {}", result, message);
-                        }else {
+                        } else {
                             error!("Could not serialize message");
                         }
                     }

@@ -1,4 +1,4 @@
-use std::collections::{HashSet};
+use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 
@@ -93,7 +93,7 @@ impl Challenge for RecoverSecret {
     }
 }
 
-impl Challenge for MonstrousMaze{
+impl Challenge for MonstrousMaze {
     type Input = MonstrousMazeInput;
     type Output = MonstrousMazeOutput;
 
@@ -159,7 +159,6 @@ impl From<&str> for GameType {
         }
     }
 }
-
 
 pub fn get_name_of_challenge_type(game_type: &GameType) -> String {
     match game_type {

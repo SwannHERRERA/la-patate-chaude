@@ -1,6 +1,6 @@
 extern crate rand;
 
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::config;

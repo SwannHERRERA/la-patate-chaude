@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use log::{error};
+use log::error;
 use rand::seq::SliceRandom;
 use rand::Rng;
 

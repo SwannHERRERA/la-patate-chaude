@@ -1,22 +1,25 @@
-use std::{io, thread, time::{Duration, Instant}};
 use std::io::Stdout;
 use std::sync::mpsc::Receiver;
+use std::{
+    io, thread,
+    time::{Duration, Instant},
+};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use tui::{
-    backend::{Backend, CrosstermBackend},
-    Frame,
-    layout::{Constraint, Corner, Direction, Layout},
-    style::{Color, Modifier, Style},
-    Terminal,
-    text::{Span, Spans}, widgets::{Block, Borders, List, ListItem},
-};
 use tui::layout::Alignment;
 use tui::widgets::{Paragraph, Wrap};
+use tui::{
+    backend::{Backend, CrosstermBackend},
+    layout::{Constraint, Corner, Direction, Layout},
+    style::{Color, Modifier, Style},
+    text::{Span, Spans},
+    widgets::{Block, Borders, List, ListItem},
+    Frame, Terminal,
+};
 
 use shared::message::PublicLeaderBoard;
 
@@ -29,7 +32,8 @@ pub struct ClientData {
 pub fn start_ui_display(reader: Receiver<ClientData>) {
     enable_raw_mode().expect("Failed to enable raw mode");
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture).expect("failed to enter alternate screen");
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)
+        .expect("failed to enter alternate screen");
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend).expect("Failed to create terminal");
 
@@ -66,10 +70,11 @@ fn run_app(
         // restore terminal
         disable_raw_mode().expect("Failed to disable raw mode");
         execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    ).expect("Failed to restore terminal");
+            terminal.backend_mut(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        )
+        .expect("Failed to restore terminal");
         terminal.hide_cursor().expect("Failed to hide cursor");
     });
 }
@@ -80,11 +85,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, data: ClientData) {
         .constraints([Constraint::Percentage(10), Constraint::Percentage(50)].as_ref())
         .split(f.size());
 
-
     let paragraph = Paragraph::new(format!("La patate chaude client {}", &data.username))
         .style(Style::default().fg(Color::LightMagenta))
-        .block(Block::default()
-            .borders(Borders::ALL))
+        .block(Block::default().borders(Borders::ALL))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, chunks[0]);
@@ -96,7 +99,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, data: ClientData) {
         .map(|player| {
             let s = match player.is_active {
                 true => Style::default().fg(Color::Green),
-                false => Style::default().fg(Color::Red)
+                false => Style::default().fg(Color::Red),
             };
             let lines = Spans::from(vec![
                 Span::styled(format!("{:<10}", player.name), s),
@@ -112,15 +115,16 @@ fn ui<B: Backend>(f: &mut Frame<B>, data: ClientData) {
                 ),
             ]);
 
-            ListItem::new(vec![
-                lines
-            ])
+            ListItem::new(vec![lines])
         })
         .collect();
-    items.insert(0, ListItem::new(vec![
-        Spans::from(vec![
-            Span::styled(format!("{:<10}", "username"),
-                         Style::default().add_modifier(Modifier::ITALIC)),
+    items.insert(
+        0,
+        ListItem::new(vec![Spans::from(vec![
+            Span::styled(
+                format!("{:<10}", "username"),
+                Style::default().add_modifier(Modifier::ITALIC),
+            ),
             Span::raw(" "),
             Span::styled(
                 format!("{:<5}", "score"),
@@ -131,8 +135,8 @@ fn ui<B: Backend>(f: &mut Frame<B>, data: ClientData) {
                 format!("{:<5}", "steps"),
                 Style::default().add_modifier(Modifier::ITALIC),
             ),
-        ])
-    ]));
+        ])]),
+    );
     let events_list = List::new(items)
         .block(Block::default().borders(Borders::ALL).title("List"))
         .start_corner(Corner::TopLeft);
